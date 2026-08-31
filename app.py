@@ -41,6 +41,21 @@ st.set_page_config(
     layout="wide"
 )
 
+st.markdown(
+    """
+    <style>
+    /* Keep the beta interface calmer and more mobile-friendly. */
+    div[data-testid="stAlert"] { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+    div[data-testid="stMetric"] { padding: 0.1rem 0; }
+    div[data-testid="stExpander"] { margin-bottom: 0.35rem; }
+    .stButton > button { min-height: 2.4rem; }
+    div[data-testid="stAudioInput"] { margin-top: 0.2rem; margin-bottom: 0.2rem; }
+    div[data-testid="stChatMessage"] { padding-top: 0.35rem; padding-bottom: 0.35rem; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 PROFILE_FILE = "player_profile.json"
 BAG_FILE = "my_bag.json"
 SHOT_FILE = "shot_history.csv"
@@ -231,31 +246,197 @@ def sign_out_cloud(
             None
         )
 
+def auth_confirmation_redirect_url():
+    """
+    Return the exact URL the user is currently using for My Play.
+    Supabase sends email-confirmation users back here.
+    """
+    try:
+        base_url = str(
+            st.context.url
+        ).strip()
+    except Exception:
+        base_url = ""
+
+    if not base_url:
+        # Local fallback for development. Streamlit Cloud should provide
+        # st.context.url automatically.
+        base_url = "http://localhost:8501"
+
+    separator = "&" if "?" in base_url else "?"
+
+    return (
+        base_url
+        + separator
+        + "email_confirmed=1"
+    )
+
+
 def authentication_screen(
     client
 ):
-    st.title(
-        "⛳ My Play"
-    )
-    st.subheader(
-        "Your personal AI caddie"
-    )
-    st.caption(
-        "Sign in or create your My Play account."
+    if "auth_view" not in st.session_state:
+        st.session_state[
+            "auth_view"
+        ] = "welcome"
+
+    email_confirmed_return = str(
+        st.query_params.get(
+            "email_confirmed",
+            ""
+        )
+        or ""
+    ).lower() in [
+        "1",
+        "true",
+        "yes",
+    ]
+
+    if email_confirmed_return:
+        st.session_state[
+            "auth_view"
+        ] = "signin"
+
+        st.session_state[
+            "email_confirmed_message"
+        ] = True
+
+        try:
+            del st.query_params[
+                "email_confirmed"
+            ]
+        except Exception:
+            pass
+
+    auth_view = st.session_state.get(
+        "auth_view",
+        "welcome"
     )
 
-    login_tab, signup_tab = st.tabs(
-        [
-            "Sign In",
-            "Create Account"
-        ]
-    )
+    # ========================================================
+    # WELCOME / HOME
+    # ========================================================
+    if auth_view == "welcome":
+        st.title(
+            "⛳ My Play"
+        )
 
-    with login_tab:
+        st.subheader(
+            "Your game. Your data. Your caddie."
+        )
+
+        st.write(
+            "My Play is a personal AI golf caddie that learns how you actually play and helps you make smarter decisions on the course."
+        )
+
+        feature_col1, feature_col2, feature_col3 = st.columns(
+            3
+        )
+
+        with feature_col1:
+            with st.container(
+                border=True
+            ):
+                st.markdown(
+                    "### 🗣️ Ask Your Caddie"
+                )
+                st.caption(
+                    "Talk naturally during a round and get club, target, and strategy recommendations."
+                )
+
+        with feature_col2:
+            with st.container(
+                border=True
+            ):
+                st.markdown(
+                    "### 📈 Learns Your Game"
+                )
+                st.caption(
+                    "My Play uses your bag, real shot history, range data, and rounds to improve over time."
+                )
+
+        with feature_col3:
+            with st.container(
+                border=True
+            ):
+                st.markdown(
+                    "### ⛳ Play Anywhere"
+                )
+                st.caption(
+                    "Use full course data when available or keep your caddie active in Limited-Data Mode."
+                )
+
+        st.markdown(
+            "### Ready to play?"
+        )
+
+        welcome_col1, welcome_col2 = st.columns(
+            2
+        )
+
+        with welcome_col1:
+            if st.button(
+                "Sign In",
+                type="primary",
+                use_container_width=True,
+                key="welcome_sign_in"
+            ):
+                st.session_state[
+                    "auth_view"
+                ] = "signin"
+                st.rerun()
+
+        with welcome_col2:
+            if st.button(
+                "Create Account",
+                use_container_width=True,
+                key="welcome_create_account"
+            ):
+                st.session_state[
+                    "auth_view"
+                ] = "signup"
+                st.rerun()
+
+        st.caption(
+            "Built for golfers who want a caddie that gets smarter from their real game."
+        )
+
+        st.stop()
+
+    # ========================================================
+    # SIGN IN
+    # ========================================================
+    if auth_view == "signin":
+        st.title(
+            "⛳ My Play"
+        )
+
+        st.subheader(
+            "Welcome back"
+        )
+
+        if st.session_state.pop(
+            "email_confirmed_message",
+            False
+        ):
+            st.success(
+                "Email confirmed. Sign in below to enter My Play."
+            )
+
+        if st.button(
+            "← Back",
+            key="signin_back_to_welcome"
+        ):
+            st.session_state[
+                "auth_view"
+            ] = "welcome"
+            st.rerun()
+
         email = st.text_input(
             "Email",
             key="auth_login_email"
         )
+
         password = st.text_input(
             "Password",
             type="password",
@@ -273,76 +454,143 @@ def authentication_screen(
                     "email": email.strip(),
                     "password": password
                 })
+
                 store_auth_session(
                     response
                 )
+
                 st.rerun()
+
             except Exception as exc:
                 st.error(
                     f"Could not sign in: {exc}"
                 )
 
-    with signup_tab:
-        email = st.text_input(
-            "Email",
-            key="auth_signup_email"
-        )
-        password = st.text_input(
-            "Password",
-            type="password",
-            key="auth_signup_password"
-        )
-        confirm = st.text_input(
-            "Confirm Password",
-            type="password",
-            key="auth_signup_confirm"
+        st.caption(
+            "New to My Play?"
         )
 
         if st.button(
-            "Create My Play Account",
-            type="primary",
+            "Create an Account",
             use_container_width=True,
-            key="auth_signup_button"
+            key="signin_go_signup"
         ):
-            if len(
-                password
-            ) < 6:
-                st.warning(
-                    "Use a password with at least 6 characters."
+            st.session_state[
+                "auth_view"
+            ] = "signup"
+            st.rerun()
+
+        st.stop()
+
+    # ========================================================
+    # CREATE ACCOUNT
+    # ========================================================
+    st.title(
+        "⛳ My Play"
+    )
+
+    st.subheader(
+        "Create your account"
+    )
+
+    if st.button(
+        "← Back",
+        key="signup_back_to_welcome"
+    ):
+        st.session_state[
+            "auth_view"
+        ] = "welcome"
+        st.rerun()
+
+    signup_email = st.text_input(
+        "Email",
+        key="auth_signup_email"
+    )
+
+    signup_password = st.text_input(
+        "Password",
+        type="password",
+        key="auth_signup_password"
+    )
+
+    signup_confirm = st.text_input(
+        "Confirm Password",
+        type="password",
+        key="auth_signup_confirm"
+    )
+
+    if st.button(
+        "Create My Play Account",
+        type="primary",
+        use_container_width=True,
+        key="auth_signup_button"
+    ):
+        if len(
+            signup_password
+        ) < 6:
+            st.warning(
+                "Use a password with at least 6 characters."
+            )
+
+        elif signup_password != signup_confirm:
+            st.warning(
+                "The passwords do not match."
+            )
+
+        else:
+            try:
+                response = client.auth.sign_up({
+                    "email": signup_email.strip(),
+                    "password": signup_password,
+                    "options": {
+                        "email_redirect_to": auth_confirmation_redirect_url()
+                    }
+                })
+
+                store_auth_session(
+                    response
                 )
-            elif password != confirm:
-                st.warning(
-                    "The passwords do not match."
-                )
-            else:
-                try:
-                    response = client.auth.sign_up({
-                        "email": email.strip(),
-                        "password": password
-                    })
-                    store_auth_session(
-                        response
+
+                if getattr(
+                    response,
+                    "session",
+                    None
+                ) is None:
+                    st.session_state[
+                        "signup_confirmation_sent"
+                    ] = True
+
+                    st.success(
+                        "Account created. Check your email and tap Confirm. My Play will bring you back to Sign In."
                     )
 
-                    if getattr(
-                        response,
-                        "session",
-                        None
-                    ) is None:
-                        st.success(
-                            "Account created. Check your email to confirm it, "
-                            "then return here and sign in."
-                        )
-                    else:
-                        st.rerun()
+                else:
+                    st.rerun()
 
-                except Exception as exc:
-                    st.error(
-                        f"Could not create account: {exc}"
-                    )
+            except Exception as exc:
+                st.error(
+                    f"Could not create account: {exc}"
+                )
+
+    if st.session_state.get(
+        "signup_confirmation_sent"
+    ):
+        if st.button(
+            "Go to Sign In",
+            use_container_width=True,
+            key="signup_go_signin"
+        ):
+            st.session_state[
+                "auth_view"
+            ] = "signin"
+
+            st.session_state[
+                "signup_confirmation_sent"
+            ] = False
+
+            st.rerun()
 
     st.stop()
-
 
 
 # ============================================================
@@ -6713,120 +6961,40 @@ if "gps_longitude" not in st.session_state:
 # HEADER
 # ============================================================
 
-st.title("⛳ My Play")
-
-account_col, logout_col = st.columns(
+header_left, header_right = st.columns(
     [
         5,
         1
-    ]
+    ],
+    vertical_alignment="center"
 )
 
-with account_col:
-    st.caption(
-        f"☁️ Signed in as {st.session_state.get('supabase_user_email', 'Golfer')}"
+with header_left:
+    st.title(
+        "⛳ My Play"
     )
 
-with logout_col:
-    if st.button(
-        "Sign Out",
-        use_container_width=True,
-        key="cloud_sign_out"
+with header_right:
+    with st.popover(
+        "⚙️",
+        use_container_width=True
     ):
-        sign_out_cloud(
-            supabase
-        )
-        st.rerun()
-
-st.caption(
-    "My Play Cloud Migration — your signed-in account can now receive the "
-    "existing local golfer data without deleting the local backup."
-)
-
-with st.expander(
-    "☁️ Cloud Data Migration",
-    expanded=False
-):
-    st.write(
-        "This copies your existing local My Play data into this signed-in "
-        "golfer account. Local files are left untouched as a backup."
-    )
-
-    current_cloud_status = cloud_data_status(
-        supabase
-    )
-
-    status_cols = st.columns(
-        len(
-            current_cloud_status
-        )
-    )
-
-    for status_col, (
-        label,
-        value
-    ) in zip(
-        status_cols,
-        current_cloud_status.items()
-    ):
-        with status_col:
-            st.metric(
-                label,
-                value
+        st.caption(
+            st.session_state.get(
+                "supabase_user_email",
+                "Signed-in golfer"
             )
+        )
 
-    if st.button(
-        "Copy My Local Data to Supabase",
-        type="primary",
-        use_container_width=True,
-        key="migrate_local_to_cloud"
-    ):
-        try:
-            migration_results = migrate_all_local_data_to_cloud(
+        if st.button(
+            "Sign Out",
+            use_container_width=True,
+            key="cloud_sign_out"
+        ):
+            sign_out_cloud(
                 supabase
             )
-
-            st.success(
-                "Cloud migration completed."
-            )
-
-            for label, (
-                count,
-                status
-            ) in migration_results.items():
-                if status == "already_has_cloud_data":
-                    st.write(
-                        f"• {label}: skipped — cloud data already exists."
-                    )
-                elif status == "no_local_data":
-                    st.write(
-                        f"• {label}: no local data to migrate."
-                    )
-                else:
-                    st.write(
-                        f"• {label}: {count} record(s) copied."
-                    )
-
-            st.info(
-                "Your original local files were not deleted."
-            )
-
-        except Exception as exc:
-            st.error(
-                f"Migration stopped: {exc}"
-            )
-
-st.success(
-    "☁️ Cloud-first mode is active for the player profile, golf bag, "
-    "shots/evidence, completed rounds, swing reminders and swing-video metadata."
-)
-
-st.success(
-    "🎥 Private cloud swing-video storage is active. New swing videos upload "
-    "to the signed-in golfer's private Supabase folder and replay through "
-    "temporary signed links."
-)
-
+            st.rerun()
 
 
 # ============================================================
@@ -15216,12 +15384,12 @@ if not bag:
 
 tab_round, tab_voice_command, tab_bag, tab_club_analytics, tab_swing_video, tab_history, tab_game = st.tabs(
     [
-        "⛳ Live Round",
-        "🗣️ Talk with Your Caddie",
-        "🎒 My Bag",
-        "📈 Club Analytics",
-        "🎥 Swing Video",
-        "📊 Analytics",
+        "⛳ Live",
+        "🗣️ Caddie",
+        "🎒 Bag",
+        "📈 Clubs",
+        "🎥 Swing",
+        "📊 Stats",
         "🧠 My Game"
     ]
 )
@@ -18973,8 +19141,8 @@ with tab_round:
         if active_round.get(
             "limited_course_data"
         ):
-            st.info(
-                "Limited Course Data Mode — your caddie is fully available, but My Play may ask for distance, hole, or hazard details that would normally come from the course database."
+            st.caption(
+                "Limited Course Data Mode • Caddie is available. My Play may ask for a missing distance, hole, or hazard detail when needed."
             )
 
         current_hole = int(
@@ -19027,350 +19195,357 @@ with tab_round:
                 running_score
             )
 
+        with st.expander(
+            "💡 Live Round Hint",
+            expanded=False
+        ):
+            st.caption(
+                "Keep this screen simple while you play: move between holes, open Caddie when you need advice, and record only the score/details you want My Play to learn from."
+            )
 
         st.divider()
 
-        st.subheader(
-            "🗣️ Your Caddie"
-        )
-
-        st.caption(
-            "Stay in Live Round and talk naturally. My Play remembers this hole, the current shot, your player data, and the running conversation."
-        )
-
-        live_round_chat_history = st.session_state.get(
-            "caddie_chat_history",
-            []
-        )
-
-        if not live_round_chat_history:
-            with st.chat_message(
-                "assistant"
-            ):
-                st.write(
-                    "I’m with you. Tell me what you’ve got, or just ask, “What’s the play?”"
-                )
-
-        for message in live_round_chat_history[
-            -12:
-        ]:
-            role = str(
-                message.get(
-                    "role",
-                    ""
-                )
-                or ""
+        with st.expander(
+            "🗣️ Caddie",
+            expanded=False
+        ):
+            st.caption(
+                "Ask naturally: “What’s the play?”, “162 into the wind,” or “bunker right.” Voice, typing, and photos are optional."
             )
 
-            text = str(
-                message.get(
-                    "text",
+            live_round_chat_history = st.session_state.get(
+                "caddie_chat_history",
+                []
+            )
+
+            if not live_round_chat_history:
+                with st.chat_message(
+                    "assistant"
+                ):
+                    st.write(
+                        "I’m with you. Tell me what you’ve got, or just ask, “What’s the play?”"
+                    )
+
+            for message in live_round_chat_history[
+                -12:
+            ]:
+                role = str(
+                    message.get(
+                        "role",
+                        ""
+                    )
+                    or ""
+                )
+
+                text = str(
+                    message.get(
+                        "text",
+                        ""
+                    )
+                    or ""
+                ).strip()
+
+                if not text:
+                    continue
+
+                with st.chat_message(
+                    "user"
+                    if role == "Golfer"
+                    else "assistant"
+                ):
+                    st.write(
+                        text
+                    )
+
+            live_round_photo = None
+
+            with st.expander(
+                "📷 Add photo to next message (optional)",
+                expanded=False
+            ):
+                photo_source = st.radio(
+                    "Photo source",
+                    [
+                        "Upload Image",
+                        "Use Camera",
+                    ],
+                    horizontal=True,
+                    key="live_round_caddie_photo_source"
+                )
+
+                if photo_source == "Upload Image":
+                    live_round_photo = st.file_uploader(
+                        "Upload lie / target image",
+                        type=[
+                            "png",
+                            "jpg",
+                            "jpeg",
+                            "webp",
+                        ],
+                        key="live_round_caddie_photo_upload"
+                    )
+                else:
+                    live_round_photo = st.camera_input(
+                        "Take a picture for your caddie",
+                        key="live_round_caddie_photo_camera"
+                    )
+
+                if live_round_photo is not None:
+                    st.caption(
+                        "Photo attached to your next caddie message."
+                    )
+
+            live_round_voice_audio = None
+
+            if voice_input_ready():
+                live_round_voice_audio = st.audio_input(
+                    "🎙️ Voice",
+                    sample_rate=16000,
+                    key="live_round_caddie_voice"
+                )
+
+            live_round_typed_text = st.chat_input(
+                "Message your caddie...",
+                key="live_round_caddie_text"
+            )
+
+            if live_round_voice_audio is not None:
+                duration = audio_duration_seconds(
+                    live_round_voice_audio
+                )
+
+                if duration >= 0:
+                    if duration > VOICE_MAX_SECONDS:
+                        st.error(
+                            f"That recording is {duration:.1f}s. The voice limit is "
+                            f"{int(VOICE_MAX_SECONDS)} seconds."
+                        )
+                    else:
+                        st.caption(
+                            f"Recording: {duration:.1f}s / {int(VOICE_MAX_SECONDS)}s"
+                        )
+
+                voice_signature = hashlib.sha256(
+                    live_round_voice_audio.getvalue()
+                ).hexdigest()
+
+                if (
+                    duration <= VOICE_MAX_SECONDS
+                    and st.session_state.get(
+                        "last_live_round_caddie_voice_signature"
+                    ) != voice_signature
+                ):
+                    with st.spinner(
+                        "Listening..."
+                    ):
+                        voice_text, voice_error = transcribe_protected_openai_voice(
+                            live_round_voice_audio
+                        )
+
+                    if voice_error:
+                        st.error(
+                            voice_error
+                        )
+
+                    elif voice_text:
+                        st.session_state[
+                            "last_live_round_caddie_voice_signature"
+                        ] = voice_signature
+
+                        st.session_state[
+                            "live_round_caddie_pending_text"
+                        ] = voice_text
+
+                        st.rerun()
+
+            if live_round_typed_text:
+                st.session_state[
+                    "live_round_caddie_pending_text"
+                ] = live_round_typed_text
+
+                st.rerun()
+
+            live_round_pending_text = str(
+                st.session_state.get(
+                    "live_round_caddie_pending_text",
                     ""
                 )
                 or ""
             ).strip()
 
-            if not text:
-                continue
+            if live_round_pending_text:
+                try:
+                    update_hidden_live_shot_context(
+                        live_round_pending_text
+                    )
+                except Exception:
+                    pass
 
-            with st.chat_message(
-                "user"
-                if role == "Golfer"
-                else "assistant"
-            ):
-                st.write(
-                    text
+                player_context = build_live_caddie_player_context(
+                    bag,
+                    shots
                 )
 
-        live_round_photo = None
+                shot_context = hidden_live_shot_context()
 
-        with st.expander(
-            "📷 Add photo to next message (optional)",
-            expanded=False
-        ):
-            photo_source = st.radio(
-                "Photo source",
-                [
-                    "Upload Image",
-                    "Use Camera",
-                ],
-                horizontal=True,
-                key="live_round_caddie_photo_source"
-            )
-
-            if photo_source == "Upload Image":
-                live_round_photo = st.file_uploader(
-                    "Upload lie / target image",
-                    type=[
-                        "png",
-                        "jpg",
-                        "jpeg",
-                        "webp",
-                    ],
-                    key="live_round_caddie_photo_upload"
-                )
-            else:
-                live_round_photo = st.camera_input(
-                    "Take a picture for your caddie",
-                    key="live_round_caddie_photo_camera"
-                )
-
-            if live_round_photo is not None:
-                st.caption(
-                    "Photo attached to your next caddie message."
-                )
-
-        live_round_voice_audio = None
-
-        if voice_input_ready():
-            live_round_voice_audio = st.audio_input(
-                "🎙️ Talk to your caddie",
-                sample_rate=16000,
-                key="live_round_caddie_voice"
-            )
-
-        live_round_typed_text = st.chat_input(
-            "Message your caddie...",
-            key="live_round_caddie_text"
-        )
-
-        if live_round_voice_audio is not None:
-            duration = audio_duration_seconds(
-                live_round_voice_audio
-            )
-
-            if duration >= 0:
-                if duration > VOICE_MAX_SECONDS:
-                    st.error(
-                        f"That recording is {duration:.1f}s. The voice limit is "
-                        f"{int(VOICE_MAX_SECONDS)} seconds."
-                    )
-                else:
-                    st.caption(
-                        f"Recording: {duration:.1f}s / {int(VOICE_MAX_SECONDS)}s"
-                    )
-
-            voice_signature = hashlib.sha256(
-                live_round_voice_audio.getvalue()
-            ).hexdigest()
-
-            if (
-                duration <= VOICE_MAX_SECONDS
-                and st.session_state.get(
-                    "last_live_round_caddie_voice_signature"
-                ) != voice_signature
-            ):
-                with st.spinner(
-                    "Listening..."
-                ):
-                    voice_text, voice_error = transcribe_protected_openai_voice(
-                        live_round_voice_audio
-                    )
-
-                if voice_error:
-                    st.error(
-                        voice_error
-                    )
-
-                elif voice_text:
-                    st.session_state[
-                        "last_live_round_caddie_voice_signature"
-                    ] = voice_signature
-
-                    st.session_state[
-                        "live_round_caddie_pending_text"
-                    ] = voice_text
-
-                    st.rerun()
-
-        if live_round_typed_text:
-            st.session_state[
-                "live_round_caddie_pending_text"
-            ] = live_round_typed_text
-
-            st.rerun()
-
-        live_round_pending_text = str(
-            st.session_state.get(
-                "live_round_caddie_pending_text",
-                ""
-            )
-            or ""
-        ).strip()
-
-        if live_round_pending_text:
-            try:
-                update_hidden_live_shot_context(
-                    live_round_pending_text
-                )
-            except Exception:
-                pass
-
-            player_context = build_live_caddie_player_context(
-                bag,
-                shots
-            )
-
-            shot_context = hidden_live_shot_context()
-
-            round_context = current_live_caddie_round_context(
-                active_round,
-                selected_course
-            )
-
-            st.session_state[
-                "live_caddie_chat_history"
-            ] = live_round_chat_history[
-                -16:
-            ]
-
-            with st.chat_message(
-                "user"
-            ):
-                st.write(
-                    live_round_pending_text
-                )
-
-            with st.chat_message(
-                "assistant"
-            ):
-                with st.spinner(
-                    "Thinking..."
-                ):
-                    answer, answer_error = ask_openai_live_caddie(
-                        live_round_pending_text,
-                        live_round_photo,
-                        round_context,
-                        player_context,
-                        shot_context
-                    )
-
-                if answer_error:
-                    st.error(
-                        answer_error
-                    )
-
-                elif answer:
-                    st.write(
-                        answer
-                    )
-
-                    live_round_chat_history.append(
-                        {
-                            "role": "Golfer",
-                            "text": live_round_pending_text,
-                        }
-                    )
-
-                    live_round_chat_history.append(
-                        {
-                            "role": "Caddie",
-                            "text": answer,
-                        }
-                    )
-
-                    st.session_state[
-                        "caddie_chat_history"
-                    ] = live_round_chat_history[
-                        -40:
-                    ]
-
-                    st.session_state[
-                        "live_caddie_chat_history"
-                    ] = st.session_state[
-                        "caddie_chat_history"
-                    ]
-
-                    st.session_state.pop(
-                        "live_round_caddie_pending_text",
-                        None
-                    )
-
-                    if st.session_state.get(
-                        "caddie_talk_back_enabled",
-                        True
-                    ):
-                        speak_in_browser(
-                            answer,
-                            key="live_round_caddie_talkback"
-                        )
-
-                    st.rerun()
-
-        caddie_action_col1, caddie_action_col2 = st.columns(
-            2
-        )
-
-        with caddie_action_col1:
-            if st.button(
-                "New Shot",
-                use_container_width=True,
-                key="live_round_caddie_new_shot"
-            ):
-                for state_key in [
-                    "caddie_distance",
-                    "caddie_wind_direction",
-                    "caddie_wind_strength",
-                    "caddie_lie_surface",
-                    "caddie_ball_sitting",
-                    "caddie_slope",
-                    "caddie_slope_severity",
-                    "caddie_elevation",
-                    "caddie_green_firmness",
-                    "caddie_pin_position",
-                    "caddie_main_trouble",
-                    "caddie_trouble_location",
-                    "caddie_safe_side",
-                    "caddie_acceptable_miss",
-                    "caddie_dead_miss",
-                    "caddie_hazard_start",
-                    "caddie_hazard_clear",
-                    "live_round_caddie_pending_text",
-                    "last_live_round_caddie_voice_signature",
-                ]:
-                    st.session_state.pop(
-                        state_key,
-                        None
-                    )
-
-                history = st.session_state.get(
-                    "caddie_chat_history",
-                    []
-                )
-
-                history.append(
-                    {
-                        "role": "Caddie",
-                        "text": "New shot. What are you looking at?",
-                    }
+                round_context = current_live_caddie_round_context(
+                    active_round,
+                    selected_course
                 )
 
                 st.session_state[
-                    "caddie_chat_history"
-                ] = history[
-                    -40:
+                    "live_caddie_chat_history"
+                ] = live_round_chat_history[
+                    -16:
                 ]
 
-                st.rerun()
-
-        with caddie_action_col2:
-            if st.button(
-                "Clear Caddie Chat",
-                use_container_width=True,
-                key="live_round_caddie_clear"
-            ):
-                for state_key in [
-                    "caddie_chat_history",
-                    "live_caddie_chat_history",
-                    "live_round_caddie_pending_text",
-                    "last_live_round_caddie_voice_signature",
-                ]:
-                    st.session_state.pop(
-                        state_key,
-                        None
+                with st.chat_message(
+                    "user"
+                ):
+                    st.write(
+                        live_round_pending_text
                     )
 
-                st.rerun()
+                with st.chat_message(
+                    "assistant"
+                ):
+                    with st.spinner(
+                        "Thinking..."
+                    ):
+                        answer, answer_error = ask_openai_live_caddie(
+                            live_round_pending_text,
+                            live_round_photo,
+                            round_context,
+                            player_context,
+                            shot_context
+                        )
+
+                    if answer_error:
+                        st.error(
+                            answer_error
+                        )
+
+                    elif answer:
+                        st.write(
+                            answer
+                        )
+
+                        live_round_chat_history.append(
+                            {
+                                "role": "Golfer",
+                                "text": live_round_pending_text,
+                            }
+                        )
+
+                        live_round_chat_history.append(
+                            {
+                                "role": "Caddie",
+                                "text": answer,
+                            }
+                        )
+
+                        st.session_state[
+                            "caddie_chat_history"
+                        ] = live_round_chat_history[
+                            -40:
+                        ]
+
+                        st.session_state[
+                            "live_caddie_chat_history"
+                        ] = st.session_state[
+                            "caddie_chat_history"
+                        ]
+
+                        st.session_state.pop(
+                            "live_round_caddie_pending_text",
+                            None
+                        )
+
+                        if st.session_state.get(
+                            "caddie_talk_back_enabled",
+                            True
+                        ):
+                            speak_in_browser(
+                                answer,
+                                key="live_round_caddie_talkback"
+                            )
+
+                        st.rerun()
+
+            caddie_action_col1, caddie_action_col2 = st.columns(
+                2
+            )
+
+            with caddie_action_col1:
+                if st.button(
+                    "New Shot",
+                    use_container_width=True,
+                    key="live_round_caddie_new_shot"
+                ):
+                    for state_key in [
+                        "caddie_distance",
+                        "caddie_wind_direction",
+                        "caddie_wind_strength",
+                        "caddie_lie_surface",
+                        "caddie_ball_sitting",
+                        "caddie_slope",
+                        "caddie_slope_severity",
+                        "caddie_elevation",
+                        "caddie_green_firmness",
+                        "caddie_pin_position",
+                        "caddie_main_trouble",
+                        "caddie_trouble_location",
+                        "caddie_safe_side",
+                        "caddie_acceptable_miss",
+                        "caddie_dead_miss",
+                        "caddie_hazard_start",
+                        "caddie_hazard_clear",
+                        "live_round_caddie_pending_text",
+                        "last_live_round_caddie_voice_signature",
+                    ]:
+                        st.session_state.pop(
+                            state_key,
+                            None
+                        )
+
+                    history = st.session_state.get(
+                        "caddie_chat_history",
+                        []
+                    )
+
+                    history.append(
+                        {
+                            "role": "Caddie",
+                            "text": "New shot. What are you looking at?",
+                        }
+                    )
+
+                    st.session_state[
+                        "caddie_chat_history"
+                    ] = history[
+                        -40:
+                    ]
+
+                    st.rerun()
+
+            with caddie_action_col2:
+                if st.button(
+                    "Clear Caddie Chat",
+                    use_container_width=True,
+                    key="live_round_caddie_clear"
+                ):
+                    for state_key in [
+                        "caddie_chat_history",
+                        "live_caddie_chat_history",
+                        "live_round_caddie_pending_text",
+                        "last_live_round_caddie_voice_signature",
+                    ]:
+                        st.session_state.pop(
+                            state_key,
+                            None
+                        )
+
+                    st.rerun()
 
         st.divider()
 
@@ -20932,8 +21107,8 @@ with tab_round:
             )
 
             with miss1:
-                st.success(
-                    f"Acceptable Miss: {acceptable}"
+                st.caption(
+                    f"Acceptable miss: {acceptable}"
                 )
 
             with miss2:
@@ -20942,8 +21117,8 @@ with tab_round:
                         f"Dead Miss: {dead}"
                     )
                 else:
-                    st.warning(
-                        f"Dead Miss: {dead}"
+                    st.caption(
+                        f"Avoid: {dead}"
                     )
 
             if round_memory:
@@ -20983,360 +21158,366 @@ with tab_round:
                             f"• {reason}"
                         )
 
-        st.divider()
-        st.subheader(
-            "Save Shot"
-        )
-
-        live_bag_names = [
-            club[
-                "Club"
-            ]
-            for club in bag
-        ]
-
-        recommended_live_club = st.session_state.get(
-            "live_last_recommendation",
-            {}
-        ).get(
-            "club",
-            live_bag_names[
-                0
-            ]
-            if live_bag_names
-            else ""
-        )
-
-        live_index = (
-            live_bag_names.index(
-                recommended_live_club
-            )
-            if recommended_live_club in live_bag_names
-            else 0
-        )
-
-        save1, save2 = st.columns(
-            2
-        )
-
-        with save1:
-            live_club_used = st.selectbox(
-                "Club Used",
-                live_bag_names,
-                index=live_index,
-                key=f"live_club_used_{current_hole}"
-            )
-
-            live_actual_carry = st.number_input(
-                "Actual Carry",
-                min_value=0,
-                max_value=400,
-                value=150,
-                step=1,
-                key=f"live_actual_carry_{current_hole}"
-            )
-
-        with save2:
-            live_result = st.selectbox(
-                "Shot Result",
-                [
-                    "On Target",
-                    "Short",
-                    "Long",
-                    "Left",
-                    "Right",
-                    "Short Left",
-                    "Short Right",
-                    "Long Left",
-                    "Long Right"
-                ],
-                key=f"live_result_{current_hole}"
-            )
-
-            live_contact = st.selectbox(
-                "Contact",
-                [
-                    "Solid",
-                    "Slight Mishit",
-                    "Poor Contact"
-                ],
-                key=f"live_contact_{current_hole}"
-            )
-
-        if st.button(
-            "Save Live Shot",
-            use_container_width=True
+        with st.expander(
+            "➕ Save Shot (optional)",
+            expanded=False
         ):
-            live_rec = st.session_state.get(
+            st.caption(
+                "Optional: save a shot when you want My Play to learn from the result."
+            )
+
+            live_bag_names = [
+                club[
+                    "Club"
+                ]
+                for club in bag
+            ]
+
+            recommended_live_club = st.session_state.get(
                 "live_last_recommendation",
                 {}
+            ).get(
+                "club",
+                live_bag_names[
+                    0
+                ]
+                if live_bag_names
+                else ""
             )
 
-            save_shot({
-                "Date": datetime.now().strftime(
-                    "%Y-%m-%d %H:%M"
-                ),
-                "Round ID": active_round.get(
-                    "round_id",
-                    ""
-                ),
-                "Course": active_round.get(
-                    "course_name",
-                    ""
-                ),
-                "Hole": current_hole,
-                "Distance To Pin": live_rec.get(
-                    "distance_to_target",
-                    live_distance
-                ),
-                "Playing Distance": live_rec.get(
-                    "playing_distance",
-                    live_distance
-                ),
-                "Recommended Club": live_rec.get(
-                    "club",
-                    "None"
-                ),
-                "Shot Type": live_rec.get(
-                    "shot_type",
-                    ""
-                ),
-                "Recommended Aim": live_rec.get(
-                    "aim",
-                    ""
-                ),
-                "Club Used": live_club_used,
-                "Actual Carry": live_actual_carry,
-                "Result": live_result,
-                "Contact": live_contact,
-                "Shot Shape": "Normal",
-                "Surface": live_surface,
-                "Lie Type": live_lie_type,
-                "Slope / Stance": live_stance,
-                "Slope Severity": live_severity,
-                "Temperature": float(
-                    current_weather.get(
-                        "temperature_2m",
-                        70
-                    )
-                ),
-                "Wind Direction": live_wind_relation,
-                "Wind Speed": float(
-                    current_weather.get(
-                        "wind_speed_10m",
-                        0
-                    )
-                ),
-                "Elevation": 0,
-                "Green Firmness": "Normal",
-                "Pin Position": live_pin,
-                "Trouble Type": live_trouble,
-                "Trouble Location": (
-                    live_trouble_location
-                    if live_trouble != "None"
-                    else "None"
-                ),
-                "Safe Side": live_safe_side,
-                "Latitude": gps_lat,
-                "Longitude": gps_lon,
-                "Note": "Live Round"
-            })
-
-            st.success(
-                "Live shot saved."
-            )
-
-            st.rerun()
-
-        st.divider()
-        st.subheader(
-            "Hole Score"
-        )
-
-        score_col1, score_col2, score_col3, score_col4 = st.columns(
-            4
-        )
-
-        existing_score = active_round.get(
-            "scores",
-            {}
-        ).get(
-            str(
-                current_hole
-            ),
-            4
-        )
-
-        existing_putts = active_round.get(
-            "putts",
-            {}
-        ).get(
-            str(
-                current_hole
-            ),
-            2
-        )
-
-        with score_col1:
-            hole_score = st.number_input(
-                "Strokes",
-                min_value=1,
-                max_value=20,
-                value=int(
-                    existing_score
-                ),
-                step=1,
-                key=f"round_score_{current_hole}"
-            )
-
-        with score_col2:
-            hole_putts = st.number_input(
-                "Putts",
-                min_value=0,
-                max_value=10,
-                value=int(
-                    existing_putts
-                ),
-                step=1,
-                key=f"round_putts_{current_hole}"
-            )
-
-        with score_col3:
-            fairway_status = st.selectbox(
-                "Fairway",
-                [
-                    "N/A",
-                    "Hit",
-                    "Miss Left",
-                    "Miss Right",
-                    "Miss Short"
-                ],
-                key=f"round_fairway_{current_hole}"
-            )
-
-        with score_col4:
-            green_status = st.selectbox(
-                "Green",
-                [
-                    "Hit",
-                    "Miss Left",
-                    "Miss Right",
-                    "Miss Short",
-                    "Miss Long"
-                ],
-                key=f"round_green_{current_hole}"
-            )
-
-        if st.button(
-            "Save Hole",
-            use_container_width=True
-        ):
-            active_round.setdefault(
-                "scores",
-                {}
-            )[
-                str(
-                    current_hole
+            live_index = (
+                live_bag_names.index(
+                    recommended_live_club
                 )
-            ] = int(
-                hole_score
+                if recommended_live_club in live_bag_names
+                else 0
             )
 
-            active_round.setdefault(
-                "putts",
-                {}
-            )[
-                str(
-                    current_hole
+            save1, save2 = st.columns(
+                2
+            )
+
+            with save1:
+                live_club_used = st.selectbox(
+                    "Club Used",
+                    live_bag_names,
+                    index=live_index,
+                    key=f"live_club_used_{current_hole}"
                 )
-            ] = int(
-                hole_putts
-            )
 
-            active_round.setdefault(
-                "fairways",
-                {}
-            )[
-                str(
-                    current_hole
+                live_actual_carry = st.number_input(
+                    "Actual Carry",
+                    min_value=0,
+                    max_value=400,
+                    value=150,
+                    step=1,
+                    key=f"live_actual_carry_{current_hole}"
                 )
-            ] = fairway_status
 
-            active_round.setdefault(
-                "greens",
-                {}
-            )[
-                str(
-                    current_hole
+            with save2:
+                live_result = st.selectbox(
+                    "Shot Result",
+                    [
+                        "On Target",
+                        "Short",
+                        "Long",
+                        "Left",
+                        "Right",
+                        "Short Left",
+                        "Short Right",
+                        "Long Left",
+                        "Long Right"
+                    ],
+                    key=f"live_result_{current_hole}"
                 )
-            ] = green_status
 
-            save_active_round(
-                active_round
-            )
+                live_contact = st.selectbox(
+                    "Contact",
+                    [
+                        "Solid",
+                        "Slight Mishit",
+                        "Poor Contact"
+                    ],
+                    key=f"live_contact_{current_hole}"
+                )
 
-            st.success(
-                f"Hole {current_hole} saved."
-            )
-
-            st.rerun()
-
-        with st.expander(
-            "Round Scorecard"
-        ):
-            score_rows = []
-
-            for hole_num in range(
-                1,
-                19
+            if st.button(
+                "Save Live Shot",
+                use_container_width=True
             ):
-                score_rows.append({
-                    "Hole": hole_num,
-                    "Score": active_round.get(
-                        "scores",
-                        {}
-                    ).get(
-                        str(
-                            hole_num
-                        ),
+                live_rec = st.session_state.get(
+                    "live_last_recommendation",
+                    {}
+                )
+
+                save_shot({
+                    "Date": datetime.now().strftime(
+                        "%Y-%m-%d %H:%M"
+                    ),
+                    "Round ID": active_round.get(
+                        "round_id",
                         ""
                     ),
-                    "Putts": active_round.get(
-                        "putts",
-                        {}
-                    ).get(
-                        str(
-                            hole_num
-                        ),
+                    "Course": active_round.get(
+                        "course_name",
                         ""
                     ),
-                    "Fairway": active_round.get(
-                        "fairways",
-                        {}
-                    ).get(
-                        str(
-                            hole_num
-                        ),
+                    "Hole": current_hole,
+                    "Distance To Pin": live_rec.get(
+                        "distance_to_target",
+                        live_distance
+                    ),
+                    "Playing Distance": live_rec.get(
+                        "playing_distance",
+                        live_distance
+                    ),
+                    "Recommended Club": live_rec.get(
+                        "club",
+                        "None"
+                    ),
+                    "Shot Type": live_rec.get(
+                        "shot_type",
                         ""
                     ),
-                    "Green": active_round.get(
-                        "greens",
-                        {}
-                    ).get(
-                        str(
-                            hole_num
-                        ),
+                    "Recommended Aim": live_rec.get(
+                        "aim",
                         ""
-                    )
+                    ),
+                    "Club Used": live_club_used,
+                    "Actual Carry": live_actual_carry,
+                    "Result": live_result,
+                    "Contact": live_contact,
+                    "Shot Shape": "Normal",
+                    "Surface": live_surface,
+                    "Lie Type": live_lie_type,
+                    "Slope / Stance": live_stance,
+                    "Slope Severity": live_severity,
+                    "Temperature": float(
+                        current_weather.get(
+                            "temperature_2m",
+                            70
+                        )
+                    ),
+                    "Wind Direction": live_wind_relation,
+                    "Wind Speed": float(
+                        current_weather.get(
+                            "wind_speed_10m",
+                            0
+                        )
+                    ),
+                    "Elevation": 0,
+                    "Green Firmness": "Normal",
+                    "Pin Position": live_pin,
+                    "Trouble Type": live_trouble,
+                    "Trouble Location": (
+                        live_trouble_location
+                        if live_trouble != "None"
+                        else "None"
+                    ),
+                    "Safe Side": live_safe_side,
+                    "Latitude": gps_lat,
+                    "Longitude": gps_lon,
+                    "Note": "Live Round"
                 })
 
-            st.dataframe(
-                pd.DataFrame(
-                    score_rows
-                ),
-                use_container_width=True,
-                hide_index=True
+                st.toast(
+                    "Live shot saved."
+                )
+
+                st.rerun()
+
+        with st.expander(
+            "✏️ Score This Hole",
+            expanded=True
+        ):
+            st.caption(
+                "Record the hole when you’re ready. Everything else can stay closed while you play."
             )
+
+            score_col1, score_col2, score_col3, score_col4 = st.columns(
+                4
+            )
+
+            existing_score = active_round.get(
+                "scores",
+                {}
+            ).get(
+                str(
+                    current_hole
+                ),
+                4
+            )
+
+            existing_putts = active_round.get(
+                "putts",
+                {}
+            ).get(
+                str(
+                    current_hole
+                ),
+                2
+            )
+
+            with score_col1:
+                hole_score = st.number_input(
+                    "Strokes",
+                    min_value=1,
+                    max_value=20,
+                    value=int(
+                        existing_score
+                    ),
+                    step=1,
+                    key=f"round_score_{current_hole}"
+                )
+
+            with score_col2:
+                hole_putts = st.number_input(
+                    "Putts",
+                    min_value=0,
+                    max_value=10,
+                    value=int(
+                        existing_putts
+                    ),
+                    step=1,
+                    key=f"round_putts_{current_hole}"
+                )
+
+            with score_col3:
+                fairway_status = st.selectbox(
+                    "Fairway",
+                    [
+                        "N/A",
+                        "Hit",
+                        "Miss Left",
+                        "Miss Right",
+                        "Miss Short"
+                    ],
+                    key=f"round_fairway_{current_hole}"
+                )
+
+            with score_col4:
+                green_status = st.selectbox(
+                    "Green",
+                    [
+                        "Hit",
+                        "Miss Left",
+                        "Miss Right",
+                        "Miss Short",
+                        "Miss Long"
+                    ],
+                    key=f"round_green_{current_hole}"
+                )
+
+            if st.button(
+                "Save Hole",
+                use_container_width=True
+            ):
+                active_round.setdefault(
+                    "scores",
+                    {}
+                )[
+                    str(
+                        current_hole
+                    )
+                ] = int(
+                    hole_score
+                )
+
+                active_round.setdefault(
+                    "putts",
+                    {}
+                )[
+                    str(
+                        current_hole
+                    )
+                ] = int(
+                    hole_putts
+                )
+
+                active_round.setdefault(
+                    "fairways",
+                    {}
+                )[
+                    str(
+                        current_hole
+                    )
+                ] = fairway_status
+
+                active_round.setdefault(
+                    "greens",
+                    {}
+                )[
+                    str(
+                        current_hole
+                    )
+                ] = green_status
+
+                save_active_round(
+                    active_round
+                )
+
+                st.toast(
+                    f"Hole {current_hole} saved."
+                )
+
+                st.rerun()
+
+            with st.expander(
+                "Round Scorecard"
+            ):
+                score_rows = []
+
+                for hole_num in range(
+                    1,
+                    19
+                ):
+                    score_rows.append({
+                        "Hole": hole_num,
+                        "Score": active_round.get(
+                            "scores",
+                            {}
+                        ).get(
+                            str(
+                                hole_num
+                            ),
+                            ""
+                        ),
+                        "Putts": active_round.get(
+                            "putts",
+                            {}
+                        ).get(
+                            str(
+                                hole_num
+                            ),
+                            ""
+                        ),
+                        "Fairway": active_round.get(
+                            "fairways",
+                            {}
+                        ).get(
+                            str(
+                                hole_num
+                            ),
+                            ""
+                        ),
+                        "Green": active_round.get(
+                            "greens",
+                            {}
+                        ).get(
+                            str(
+                                hole_num
+                            ),
+                            ""
+                        )
+                    })
+
+                st.dataframe(
+                    pd.DataFrame(
+                        score_rows
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
 
         st.divider()
 
@@ -21386,7 +21567,7 @@ with tab_round:
 
 with tab_voice_command:
     st.header(
-        "🗣️ Talk with Your Caddie"
+        "🗣️ Caddie"
     )
 
     try:
@@ -21460,12 +21641,16 @@ with tab_voice_command:
         }
 
         st.caption(
-            "Start a round manually for full on-course context. You can still ask about your clubs and game here."
+            "Off-course mode • Ask about your clubs, strategy, or your game."
         )
 
-    st.caption(
-        "Talk naturally. Your caddie remembers the conversation, the current shot, your player data, and any photo you attach."
-    )
+    with st.expander(
+        "💡 How to use Caddie",
+        expanded=False
+    ):
+        st.caption(
+            "Talk or type naturally. During a Live Round, My Play also uses the current hole and shot context automatically."
+        )
 
     chat_history = st.session_state.get(
         "caddie_chat_history",
@@ -21509,51 +21694,56 @@ with tab_voice_command:
                 text
             )
 
-    photo_file = None
-
     with st.expander(
-        "📷 Add a photo (optional)",
+        "＋ Voice / Photo",
         expanded=False
     ):
+        photo_file = None
+
         st.caption(
-            "Use this only when showing your lie, rough, slope, obstruction, or target is easier than describing it."
+            "Attach a photo only when showing the lie or target is easier than describing it."
         )
 
-        photo_file = st.camera_input(
-            "Take a photo for your caddie",
+        photo_file = st.file_uploader(
+            "Photo",
+            type=[
+                "png",
+                "jpg",
+                "jpeg",
+                "webp",
+            ],
             key="caddie_running_chat_photo"
         )
 
         if photo_file is not None:
             st.caption(
-                "Photo attached to your next caddie message."
+                "Photo attached to your next message."
             )
 
-    voice_status = voice_usage_status()
+        voice_status = voice_usage_status()
 
-    if voice_status.get(
-        "ok"
-    ):
-        remaining = int(
-            voice_status.get(
-                "remaining",
-                0
+        if voice_status.get(
+            "ok"
+        ):
+            remaining = int(
+                voice_status.get(
+                    "remaining",
+                    0
+                )
             )
-        )
 
-        st.caption(
-            f"Voice: {remaining} of {VOICE_DAILY_LIMIT} commands remaining today • "
-            f"{int(VOICE_MAX_SECONDS)} sec max"
-        )
+            st.caption(
+                f"Voice remaining today: {remaining}/{VOICE_DAILY_LIMIT}"
+            )
 
-    voice_audio = None
+        voice_audio = None
 
-    if voice_input_ready():
-        voice_audio = st.audio_input(
-            "🎙️ Talk to your caddie",
-            sample_rate=16000,
-            key="caddie_running_chat_voice"
-        )
+        if voice_input_ready():
+            voice_audio = st.audio_input(
+                "🎙️ Voice message",
+                sample_rate=16000,
+                key="caddie_running_chat_voice"
+            )
 
     typed_text = st.chat_input(
         "Message your caddie..."
@@ -21777,7 +21967,7 @@ with tab_voice_command:
 
     with action_col2:
         if st.button(
-            "Clear Conversation",
+            "Clear Chat",
             use_container_width=True,
             key="caddie_running_clear_chat"
         ):
@@ -21797,6 +21987,9 @@ with tab_voice_command:
 with tab_bag:
     st.header(
         "My Bag"
+    )
+    st.caption(
+        "Hint: Keep your stock carries and typical misses current. My Play combines these with learned shot data."
     )
 
     with st.expander(
@@ -24099,6 +24292,103 @@ with tab_history:
 
 with tab_game:
     st.header(
+        "My Game"
+    )
+
+    st.caption(
+        "Your player profile, reminders, and account settings."
+    )
+
+    with st.expander(
+        "⚙️ Account & Beta Tools",
+        expanded=False
+    ):
+        st.caption(
+            f"Signed in as {st.session_state.get('supabase_user_email', 'Golfer')}"
+        )
+
+        st.caption(
+            "Cloud storage is active for your player profile, bag, shots, completed rounds, reminders, and swing-video metadata."
+        )
+
+        with st.expander(
+            "Cloud Data Migration",
+            expanded=False
+        ):
+            st.caption(
+                "Only use this if you need to copy older local test data into this signed-in account."
+            )
+
+            current_cloud_status = cloud_data_status(
+                supabase
+            )
+
+            status_cols = st.columns(
+                len(
+                    current_cloud_status
+                )
+            )
+
+            for status_col, (
+                label,
+                value
+            ) in zip(
+                status_cols,
+                current_cloud_status.items()
+            ):
+                with status_col:
+                    st.metric(
+                        label,
+                        value
+                    )
+
+            if st.button(
+                "Copy Local Test Data to Cloud",
+                use_container_width=True,
+                key="migrate_local_to_cloud_settings"
+            ):
+                try:
+                    migration_results = migrate_all_local_data_to_cloud(
+                        supabase
+                    )
+
+                    st.toast(
+                        "Cloud migration completed."
+                    )
+
+                    for label, (
+                        count,
+                        status
+                    ) in migration_results.items():
+                        if status == "already_has_cloud_data":
+                            st.caption(
+                                f"{label}: skipped — cloud data already exists."
+                            )
+                        elif status == "no_local_data":
+                            st.caption(
+                                f"{label}: no local data to migrate."
+                            )
+                        else:
+                            st.caption(
+                                f"{label}: {count} record(s) copied."
+                            )
+
+                except Exception as exc:
+                    st.error(
+                        f"Migration stopped: {exc}"
+                    )
+
+        if st.button(
+            "Sign Out",
+            use_container_width=True,
+            key="cloud_sign_out_settings"
+        ):
+            sign_out_cloud(
+                supabase
+            )
+            st.rerun()
+
+    st.subheader(
         "Player Profile"
     )
 
