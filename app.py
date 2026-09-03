@@ -12,8 +12,10 @@ import math
 import uuid
 import mimetypes
 import subprocess
+import base64
+import zipfile
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from supabase import create_client
 
@@ -103,6 +105,117 @@ st.markdown(
     }
     .myplay-hero h2 { margin: 0 0 0.25rem 0; }
     .myplay-hero p { color: var(--myplay-muted); margin: 0; }
+    .myplay-caddie-hero {
+        min-height: 470px;
+        display: flex;
+        align-items: center;
+        padding: clamp(1.4rem, 4vw, 4.25rem);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 1.25rem;
+        background-size: cover;
+        background-position: center;
+        overflow: hidden;
+        box-shadow: 0 22px 55px rgba(0, 0, 0, 0.30);
+        margin: 0.75rem 0 1rem;
+    }
+    .myplay-caddie-hero__copy {
+        width: min(520px, 56%);
+        color: #ffffff;
+        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+    }
+    .myplay-caddie-hero__eyebrow {
+        color: #7de4ba;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        margin-bottom: 0.65rem;
+    }
+    .myplay-caddie-hero__copy h1 {
+        color: #ffffff;
+        font-size: clamp(2.25rem, 5vw, 4.35rem);
+        line-height: 0.98;
+        margin: 0 0 1rem;
+        max-width: 500px;
+    }
+    .myplay-caddie-hero__copy p {
+        color: rgba(255, 255, 255, 0.88);
+        font-size: clamp(1rem, 1.6vw, 1.2rem);
+        line-height: 1.55;
+        margin: 0;
+        max-width: 480px;
+    }
+    .myplay-purpose {
+        padding: 1rem 1.1rem;
+        border-left: 4px solid var(--myplay-green);
+        background: var(--myplay-surface);
+        border-radius: 0 0.85rem 0.85rem 0;
+        margin: 1rem 0;
+    }
+    .myplay-purpose strong { display: block; margin-bottom: 0.2rem; }
+    .myplay-facility-map {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1672 / 941;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 1.25rem;
+        background: #07100d;
+        box-shadow: 0 22px 55px rgba(0, 0, 0, 0.34);
+        margin: 0.7rem 0 1rem;
+    }
+    .myplay-facility-map img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .myplay-hotspot {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.55rem 0.78rem;
+        border: 1px solid rgba(125, 228, 186, 0.85);
+        border-radius: 999px;
+        color: #ffffff !important;
+        background: rgba(3, 10, 9, 0.78);
+        box-shadow: 0 0 0 4px rgba(11, 201, 130, 0.12), 0 8px 24px rgba(0, 0, 0, 0.42);
+        backdrop-filter: blur(8px);
+        font-size: clamp(0.62rem, 1.1vw, 0.95rem);
+        font-weight: 800;
+        line-height: 1;
+        text-decoration: none !important;
+        white-space: nowrap;
+        transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease;
+    }
+    .myplay-hotspot::before {
+        content: "";
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background: #5bffc1;
+        box-shadow: 0 0 12px #5bffc1;
+    }
+    .myplay-hotspot:hover {
+        transform: translate(-50%, -50%) scale(1.06);
+        background: rgba(8, 70, 48, 0.94);
+        box-shadow: 0 0 0 6px rgba(11, 201, 130, 0.18), 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .myplay-hotspot--round { left: 13%; top: 51%; }
+    .myplay-hotspot--uploads { left: 35%; top: 31%; }
+    .myplay-hotspot--caddie { left: 42%; top: 58%; }
+    .myplay-hotspot--bag { left: 87%; top: 67%; }
+    .myplay-hotspot--settings { left: 89%; top: 25%; }
+    .myplay-map-caption {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        color: var(--myplay-muted);
+        font-size: 0.88rem;
+        margin-bottom: 1rem;
+    }
     .myplay-card {
         min-height: 126px;
         padding: 1rem;
@@ -175,6 +288,12 @@ st.markdown(
         .block-container { padding: 0.8rem 0.8rem 3rem; }
         .myplay-card { min-height: auto; }
         button[data-baseweb="tab"] { padding-left: 0.55rem; padding-right: 0.55rem; }
+        .myplay-caddie-hero { min-height: 510px; align-items: flex-end; background-position: 62% center; }
+        .myplay-caddie-hero__copy { width: 100%; }
+        .myplay-caddie-hero__copy h1 { font-size: 2.55rem; }
+        .myplay-hotspot { padding: 0.38rem 0.48rem; }
+        .myplay-hotspot::before { width: 0.35rem; height: 0.35rem; }
+        .myplay-map-caption { display: block; }
     }
     </style>
     """,
@@ -197,6 +316,177 @@ LOCAL_COURSE_FILE = "opengolfapi-us.csv.gz"
 LOCAL_COURSE_URL = "https://raw.githubusercontent.com/opengolfapi/data/main/opengolfapi-us.csv.gz"
 CUSTOM_COURSE_LIBRARY_FILE = "community_course_library.json"
 COURSE_SUBMISSION_FILE = "course_submissions.json"
+HERO_IMAGE_FILE = "myplay-performance-center-hero.png"
+FACILITY_HUB_IMAGE_FILE = "myplay-clubhouse-hub.png"
+PRIVACY_CONTACT = "Staticprophet77@gmail.com"
+
+
+@st.cache_data(show_spinner=False)
+def asset_data_uri(filename):
+    path = Path(__file__).resolve().parent / filename
+    if not path.exists():
+        return ""
+    mime_type = mimetypes.guess_type(path.name)[0] or "image/png"
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def render_caddie_hero(headline, description, eyebrow="MY PLAY · PERSONAL AI CADDIE"):
+    hero_uri = asset_data_uri(HERO_IMAGE_FILE)
+    background = (
+        f"linear-gradient(90deg, rgba(5, 10, 13, 0.98) 0%, rgba(5, 10, 13, 0.88) 27%, "
+        f"rgba(5, 10, 13, 0.32) 63%, rgba(5, 10, 13, 0.10) 100%), url('{hero_uri}')"
+        if hero_uri
+        else "linear-gradient(135deg, #08100d 0%, #163d2c 100%)"
+    )
+    st.markdown(
+        f"""
+        <section class="myplay-caddie-hero" style="background-image: {background};">
+            <div class="myplay-caddie-hero__copy">
+                <div class="myplay-caddie-hero__eyebrow">{html.escape(eyebrow)}</div>
+                <h1>{html.escape(headline)}</h1>
+                <p>{html.escape(description)}</p>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_clickable_facility():
+    scenery = st.session_state.get("clubhouse_scenery", "Course Door")
+    scenery_file = (
+        HERO_IMAGE_FILE
+        if scenery == "Performance Center Night"
+        else FACILITY_HUB_IMAGE_FILE
+    )
+    facility_uri = asset_data_uri(scenery_file)
+    if not facility_uri:
+        st.warning("The clubhouse navigation image is not installed.")
+        return
+    st.markdown(
+        f"""
+        <div class="myplay-facility-map" aria-label="Interactive My Play clubhouse">
+            <img src="{facility_uri}" alt="High-tech golf performance center" />
+            <a class="myplay-hotspot myplay-hotspot--round" href="?hub=round" target="_self" aria-label="Open Live Round">Live Round</a>
+            <a class="myplay-hotspot myplay-hotspot--uploads" href="?hub=uploads" target="_self" aria-label="Open Data Uploads">Data Uploads</a>
+            <a class="myplay-hotspot myplay-hotspot--caddie" href="?hub=caddie" target="_self" aria-label="Open Caddie">Caddie</a>
+            <a class="myplay-hotspot myplay-hotspot--bag" href="?hub=bag" target="_self" aria-label="Open My Bag">My Bag</a>
+            <a class="myplay-hotspot myplay-hotspot--settings" href="?hub=settings" target="_self" aria-label="Open Settings">Settings</a>
+        </div>
+        <div class="myplay-map-caption">
+            <span>Select a glowing destination inside your clubhouse.</span>
+            <span>The standard navigation remains available above.</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+def render_beta_data_notice():
+    st.markdown("#### Privacy & Data Notice")
+    st.caption("Effective September 3, 2026 · My Play public beta")
+    st.markdown(
+        f"""
+**What My Play collects**
+
+My Play stores the information needed to create and improve your personal caddie, including your account email, player profile, golf bag, club distances, misses, preferences, shot history, rounds, course selections, and information you choose to upload.
+
+**Optional information**
+
+Location, voice recordings, photos, scorecards, simulator files, and swing videos are used only when you choose those features. My Play should explain why an optional permission or upload is needed before you use it.
+
+**How information is processed**
+
+- Supabase provides account authentication, database, and cloud-storage services.
+- OpenAI processes voice commands and selected text, photos, or scorecards when you request an AI-powered feature.
+- Course, mapping, location, and weather providers process the information necessary to return those services.
+
+**Sharing and selling**
+
+My Play does not sell your personal information. Your player profile and golf history are not public by default. Information is provided to service providers only as needed to operate features you choose, maintain the service, protect accounts, or comply with law.
+
+**Your choices**
+
+You may avoid optional voice, photo, video, and precise-location features and continue using manual entry. You may download a copy of core My Play data or permanently delete your account and associated cloud data from Settings. For corrections, questions, or help with a request, contact **{PRIVACY_CONTACT}** from the email address connected to the account.
+
+**Retention and security**
+
+Account data is kept while the account is active or as reasonably necessary to operate the beta, resolve disputes, prevent abuse, and meet legal obligations. My Play uses service providers and access controls intended to protect information, but no internet service can guarantee absolute security.
+
+**Children**
+
+The public beta is not directed to children under 13, and children under 13 may not create an account.
+        """
+    )
+
+
+def render_beta_terms():
+    st.markdown("#### Beta Terms of Use")
+    st.caption("Effective September 3, 2026 · My Play public beta")
+    st.markdown(
+        f"""
+**Purpose of the service**
+
+My Play provides golf planning, tracking, and AI-assisted caddie recommendations. Recommendations are informational decision support—not a guarantee of performance, safety, course conditions, or results. Players remain responsible for their decisions, surroundings, local rules, and course policies.
+
+**Your account**
+
+Provide accurate account information, protect your password, and notify **{PRIVACY_CONTACT}** if you believe your account has been compromised. Do not use another person's account without permission.
+
+**Your content**
+
+You retain ownership of the golf information and media you submit. You permit My Play and its service providers to host, process, display, and analyze that content only as necessary to operate and improve the features you request.
+
+**Acceptable use**
+
+Do not upload content you do not have permission to use, attempt to access another player's information, interfere with the service, misuse AI features, or use My Play for unlawful activity.
+
+**Beta availability**
+
+My Play is an evolving beta. Features, recommendations, course information, and availability may change, contain errors, or be interrupted. Back up information that is important to you.
+
+**Changes and contact**
+
+Material changes to these notices should be communicated in the app with an updated effective date. Questions, privacy requests, or account concerns can be sent to **{PRIVACY_CONTACT}**.
+        """
+    )
+
+
+def build_player_export(profile, game_profile, bag, shots, rounds):
+    """Create a portable ZIP containing the signed-in golfer's core data."""
+    export_buffer = io.BytesIO()
+    with zipfile.ZipFile(
+        export_buffer,
+        mode="w",
+        compression=zipfile.ZIP_DEFLATED,
+    ) as archive:
+        archive.writestr(
+            "README.txt",
+            "My Play data export\n"
+            f"Created: {datetime.now(timezone.utc).isoformat()}\n\n"
+            "This archive contains the core player data available to the app. "
+            "Uploaded media files are not included in this beta export.\n",
+        )
+        archive.writestr(
+            "player-profile.json",
+            json.dumps(profile or {}, indent=2, default=str),
+        )
+        archive.writestr(
+            "caddie-preferences.json",
+            json.dumps(game_profile or {}, indent=2, default=str),
+        )
+        archive.writestr(
+            "golf-bag.json",
+            json.dumps(bag or [], indent=2, default=str),
+        )
+        if isinstance(shots, pd.DataFrame):
+            archive.writestr("shots.csv", shots.to_csv(index=False))
+        else:
+            archive.writestr("shots.csv", "")
+        if isinstance(rounds, pd.DataFrame):
+            archive.writestr("rounds.csv", rounds.to_csv(index=False))
+        else:
+            archive.writestr("rounds.csv", "")
+    return export_buffer.getvalue()
 
 OPEN_GOLF_BASE = "https://api.opengolfapi.org"
 NOMINATIM_BASE = "https://nominatim.openstreetmap.org/search"
@@ -868,16 +1158,48 @@ def authentication_screen(
     # WELCOME / HOME
     # ========================================================
     if auth_view == "welcome":
-        st.title(
-            "⛳ My Play"
+        if st.session_state.pop("account_deleted_message", False):
+            st.success("Your My Play account and associated cloud data were deleted.")
+
+        render_caddie_hero(
+            "Meet the caddie that learns your game.",
+            "Build your player, load your clubs and real golf data, then take a personal AI caddie with you onto the course.",
         )
 
-        st.subheader(
-            "Your game. Your data. Your caddie."
+        welcome_col1, welcome_col2 = st.columns(2)
+
+        with welcome_col1:
+            if st.button(
+                "Sign In",
+                type="primary",
+                use_container_width=True,
+                key="welcome_sign_in"
+            ):
+                st.session_state["auth_view"] = "signin"
+                st.rerun()
+
+        with welcome_col2:
+            if st.button(
+                "Create Account",
+                use_container_width=True,
+                key="welcome_create_account"
+            ):
+                st.session_state["auth_view"] = "signup"
+                st.rerun()
+
+        st.markdown(
+            """
+            <div class="myplay-purpose">
+                <strong>Other apps track the score. My Play learns the player.</strong>
+                GPS tells you where you are. My Play helps you decide what to do next.
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
-        st.write(
-            "My Play is a personal AI golf caddie that learns how you actually play and helps you make smarter decisions on the course."
+        st.subheader("How My Play becomes your caddie")
+        st.caption(
+            "Tell it a little, receive useful advice, then let it learn automatically while you play."
         )
 
         feature_col1, feature_col2, feature_col3 = st.columns(
@@ -889,10 +1211,10 @@ def authentication_screen(
                 border=True
             ):
                 st.markdown(
-                    "### 🗣️ Ask Your Caddie"
+                    "### 1 · Build My Player"
                 )
                 st.caption(
-                    "Talk naturally during a round and get club, target, and strategy recommendations."
+                    "Add your clubs, real distances, handedness, normal misses, preferences, range sessions, or simulator data. Start with only what you know."
                 )
 
         with feature_col2:
@@ -900,10 +1222,10 @@ def authentication_screen(
                 border=True
             ):
                 st.markdown(
-                    "### 📈 Learns Your Game"
+                    "### 2 · Read Every Shot"
                 )
                 st.caption(
-                    "My Play uses your bag, real shot history, range data, and rounds to improve over time."
+                    "My Play considers distance, lie, wind, temperature, elevation, hazards, green conditions, and pin position."
                 )
 
         with feature_col3:
@@ -911,45 +1233,18 @@ def authentication_screen(
                 border=True
             ):
                 st.markdown(
-                    "### ⛳ Play Anywhere"
+                    "### 3 · Get a Real Plan"
                 )
                 st.caption(
-                    "Use full course data when available or keep your caddie active in Limited-Data Mode."
+                    "Your caddie recommends a club, playing distance, target line, safest miss, strategy, and confidence—then learns from the result."
                 )
 
-        st.markdown(
-            "### Ready to play?"
+        st.info(
+            "Easy ways to begin: Quick Setup · Speak to My Caddie · Import Simulator Data · Learn While I Play"
         )
-
-        welcome_col1, welcome_col2 = st.columns(
-            2
-        )
-
-        with welcome_col1:
-            if st.button(
-                "Sign In",
-                type="primary",
-                use_container_width=True,
-                key="welcome_sign_in"
-            ):
-                st.session_state[
-                    "auth_view"
-                ] = "signin"
-                st.rerun()
-
-        with welcome_col2:
-            if st.button(
-                "Create Account",
-                use_container_width=True,
-                key="welcome_create_account"
-            ):
-                st.session_state[
-                    "auth_view"
-                ] = "signup"
-                st.rerun()
 
         st.caption(
-            "Built for golfers who want a caddie that gets smarter from their real game."
+            f"Beta Privacy & Data Notice and Terms are available during account creation. Questions: {PRIVACY_CONTACT}"
         )
 
         st.stop()
@@ -1070,11 +1365,23 @@ def authentication_screen(
         key="auth_signup_confirm"
     )
 
+    with st.expander("Privacy & Data Notice", expanded=False):
+        render_beta_data_notice()
+
+    with st.expander("Beta Terms of Use", expanded=False):
+        render_beta_terms()
+
+    signup_accept = st.checkbox(
+        "I have read and agree to the Privacy & Data Notice and Beta Terms of Use.",
+        key="auth_signup_accept",
+    )
+
     if st.button(
         "Create My Play Account",
         type="primary",
         use_container_width=True,
-        key="auth_signup_button"
+        key="auth_signup_button",
+        disabled=not signup_accept,
     ):
         if len(
             signup_password
@@ -1094,7 +1401,12 @@ def authentication_screen(
                     "email": signup_email.strip(),
                     "password": signup_password,
                     "options": {
-                        "email_redirect_to": auth_confirmation_redirect_url()
+                        "email_redirect_to": auth_confirmation_redirect_url(),
+                        "data": {
+                            "privacy_notice_version": "2026-09-03",
+                            "beta_terms_version": "2026-09-03",
+                            "accepted_at": datetime.now(timezone.utc).isoformat(),
+                        },
                     }
                 })
 
@@ -16187,6 +16499,12 @@ def render_course_builder_for_selected_course(selected_course):
 # ============================================================
 
 if not bag:
+    render_caddie_hero(
+        "Let's build your player.",
+        "Give your caddie one club to begin. You can add the rest of your bag, import simulator data, or let My Play learn while you play.",
+        eyebrow="WELCOME TO THE PERFORMANCE CENTER",
+    )
+
     st.header(
         "👋 Welcome to My Play"
     )
@@ -16271,9 +16589,184 @@ if not bag:
     st.stop()
 
 
-tab_round, tab_voice_command, tab_player = st.tabs(
-    ["Live Round", "Caddie", "My Player"]
+requested_hub = str(st.query_params.get("hub", "home") or "home").lower()
+main_tab_for_hub = {
+    "home": "Home",
+    "round": "Live Round",
+    "caddie": "Caddie",
+    "bag": "My Player",
+    "uploads": "My Player",
+    "player": "My Player",
+    "settings": "Settings",
+}
+main_tab_default = main_tab_for_hub.get(requested_hub, "Home")
+
+tab_home, tab_round, tab_voice_command, tab_player, tab_settings = st.tabs(
+    ["Home", "Live Round", "Caddie", "My Player", "Settings"],
+    default=main_tab_default,
+    key="main_navigation",
 )
+
+with tab_home:
+    home_player_name = str(profile.get("display_name", "") or "").strip() or "Golfer"
+    st.markdown(
+        f"### Welcome to your clubhouse, {html.escape(home_player_name)}"
+    )
+    st.caption(
+        "Choose a destination in the room. Your facility grows more useful as your caddie learns your game."
+    )
+    render_clickable_facility()
+
+    home_rounds = load_round_history()
+    home_evidence_count = (
+        len(all_player_evidence)
+        if isinstance(all_player_evidence, pd.DataFrame)
+        else 0
+    )
+    home_round_count = len(home_rounds) if isinstance(home_rounds, pd.DataFrame) else 0
+    home_knowledge_score = min(
+        100,
+        15 + min(len(bag) * 4, 40) + min(home_evidence_count, 30) + min(home_round_count * 5, 15),
+    )
+
+    st.subheader("What your personal caddie does")
+    st.write(
+        "My Play turns the information you already know—and the shots you record—into "
+        "clear, course-ready decisions. It recommends a club, target, playing distance, "
+        "safe miss, and strategy while continuing to learn your real game."
+    )
+
+    home_metric1, home_metric2, home_metric3 = st.columns(3)
+    with home_metric1:
+        st.metric("Clubs mapped", len(bag))
+    with home_metric2:
+        st.metric("Shots learned", home_evidence_count)
+    with home_metric3:
+        st.metric("Rounds remembered", home_round_count)
+
+    st.markdown("#### Caddie knowledge")
+    st.progress(home_knowledge_score)
+    st.caption(
+        f"{home_knowledge_score}% ready · Every club, shot, round, and preference gives your caddie better context."
+    )
+
+    path_col1, path_col2, path_col3 = st.columns(3)
+    with path_col1:
+        with st.container(border=True):
+            st.markdown("### Play now")
+            st.write("Open **Live Round**, choose a course and tees, then get shot-by-shot help.")
+            st.caption("Fastest path when you are already at the course.")
+    with path_col2:
+        with st.container(border=True):
+            st.markdown("### Train my caddie")
+            st.write("Open **My Player** to add clubs, distances, misses, preferences, or simulator data.")
+            st.caption("You can start small—perfect data is not required.")
+    with path_col3:
+        with st.container(border=True):
+            st.markdown("### Ask the caddie")
+            st.write("Open **Caddie** to speak naturally about a shot, target, club, or result.")
+            st.caption("Manual controls remain available if you skip voice or location.")
+
+    st.info(
+        "Caddie tip: Begin with the clubs and carry distances you trust most. My Play can fill in its understanding as you record real shots."
+    )
+
+with tab_settings:
+    st.header("Settings")
+    st.caption(
+        f"Signed in as {st.session_state.get('supabase_user_email', 'Golfer')}"
+    )
+
+    st.subheader("Clubhouse appearance")
+    st.selectbox(
+        "Scenery",
+        ["Course Door", "Performance Center Night"],
+        key="clubhouse_scenery",
+        help="Choose the visual atmosphere used on your Home clubhouse.",
+    )
+    st.caption("Course Door is bright and course-ready. Performance Center Night is darker and more cinematic.")
+
+    st.subheader("Account security")
+    with st.form("change_password_form", clear_on_submit=True):
+        new_password = st.text_input("New password", type="password")
+        confirm_new_password = st.text_input("Confirm new password", type="password")
+        change_password = st.form_submit_button(
+            "Change Password", type="primary", use_container_width=True
+        )
+    if change_password:
+        if len(new_password) < 8:
+            st.warning("Use at least 8 characters for your new password.")
+        elif new_password != confirm_new_password:
+            st.warning("The passwords do not match.")
+        else:
+            try:
+                supabase.auth.update_user({"password": new_password})
+                st.success("Password changed successfully.")
+            except Exception as exc:
+                st.error(f"Could not change the password: {exc}")
+
+    st.divider()
+    st.subheader("Privacy & your data")
+    st.write(
+        "Your golf profile is private by default. Optional voice, location, photo, "
+        "scorecard, simulator, and video features are used only when you choose them."
+    )
+    with st.expander("Read the Privacy & Data Notice", expanded=False):
+        render_beta_data_notice()
+    with st.expander("Read the Beta Terms of Use", expanded=False):
+        render_beta_terms()
+
+    settings_rounds = load_round_history()
+    try:
+        export_bytes = build_player_export(
+            profile, game_profile, bag, all_player_evidence, settings_rounds
+        )
+        st.download_button(
+            "Download My Data",
+            data=export_bytes,
+            file_name=f"my-play-data-{datetime.now().date().isoformat()}.zip",
+            mime="application/zip",
+            use_container_width=True,
+        )
+        st.caption("Includes core profile, bag, preferences, shots, and round data.")
+    except Exception as exc:
+        st.warning(f"The data export could not be prepared: {exc}")
+
+    with st.expander("Delete My Account", expanded=False):
+        st.warning(
+            "This permanently deletes your My Play account, player data, round history, "
+            "and stored swing videos. This cannot be undone."
+        )
+        delete_confirmation = st.text_input(
+            'Type "DELETE MY ACCOUNT" to confirm',
+            key="delete_account_confirmation",
+        )
+        delete_account = st.button(
+            "Permanently Delete My Account",
+            type="primary",
+            use_container_width=True,
+            disabled=delete_confirmation.strip() != "DELETE MY ACCOUNT",
+            key="delete_my_play_account",
+        )
+        if delete_account:
+            try:
+                supabase.functions.invoke(
+                    "delete-my-account",
+                    invoke_options={"body": {"confirm": "DELETE MY ACCOUNT"}},
+                )
+                sign_out_cloud(supabase)
+                st.session_state["account_deleted_message"] = True
+                st.rerun()
+            except Exception as exc:
+                st.error(
+                    "Automatic deletion is not active yet. The secure Supabase deletion "
+                    f"function must be deployed first. Contact {PRIVACY_CONTACT} if you need help. "
+                    f"Technical detail: {exc}"
+                )
+
+    if st.button("Sign Out", use_container_width=True, key="settings_sign_out"):
+        sign_out_cloud(supabase)
+        st.rerun()
 
 with tab_player:
     (
@@ -16288,7 +16781,15 @@ with tab_player:
         [
             "Profile", "My Bag", "Preferences", "Club Analytics",
             "Round Biographies", "Swing Video", "Data Uploads",
-        ]
+        ],
+        default=(
+            "My Bag"
+            if requested_hub == "bag"
+            else "Data Uploads"
+            if requested_hub == "uploads"
+            else "Profile"
+        ),
+        key="my_player_navigation",
     )
 
 with tab_player_home:

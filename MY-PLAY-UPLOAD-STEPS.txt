@@ -1,0 +1,36 @@
+MY PLAY — GITHUB UPDATE
+
+This release includes:
+- Clickable high-tech clubhouse navigation
+- Course Door and Performance Center Night scenery
+- Educational welcome and Home content
+- Password changes
+- Privacy & Data Notice and Beta Terms
+- Core-data download
+- Protected automatic account deletion code
+- MIT license so others may use the project
+
+UPLOAD TO GITHUB
+1. Right-click the downloaded ZIP and choose Extract All.
+2. Open the extracted My-Play-Release folder.
+3. Open https://github.com/xWall-Starx/My-Play in your browser.
+4. Select Add file, then Upload files.
+5. Drag every item inside My-Play-Release onto the GitHub upload page.
+6. Wait until all files finish loading.
+7. In the commit message box, enter:
+   Add interactive clubhouse and account privacy tools
+8. Select Commit changes.
+9. Open the repository page again and confirm both PNG images, app.py,
+   README.md, LICENSE, .gitignore, and the supabase folder are present.
+
+STREAMLIT
+10. Open your Streamlit Community Cloud app.
+11. If it does not update automatically, open Manage app and reboot it.
+
+IMPORTANT — AUTOMATIC DELETION
+The app button is included, but it becomes active only after the protected
+delete-my-account Edge Function is deployed to the same Supabase project.
+Do not put a Supabase service-role key in app.py, Streamlit, or GitHub.
+Test deletion with a disposable account after deployment.
+
+Privacy/support contact: Staticprophet77@gmail.com
