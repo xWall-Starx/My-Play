@@ -18,6 +18,14 @@ from pathlib import Path
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from supabase import create_client
+from PIL import Image, ImageDraw, ImageFont
+
+try:
+    from streamlit_image_coordinates import streamlit_image_coordinates
+    IMAGE_COORDINATES_AVAILABLE = True
+except Exception:
+    streamlit_image_coordinates = None
+    IMAGE_COORDINATES_AVAILABLE = False
 
 
 try:
@@ -273,8 +281,13 @@ st.markdown(
         font-size: 0.88rem;
         margin-bottom: 1rem;
     }
-    /* The clubhouse scene is the primary navigation. Keep the underlying
-       Streamlit tabs for routing/accessibility, but hide only the main row. */
+    /* The clubhouse and room controls are the navigation. Streamlit tabs are
+       retained only as an internal content switch and must never appear. */
+    div[data-testid="stTabs"] > div[data-baseweb="tab-list"],
+    div[data-testid="stTabs"] div[data-baseweb="tab-list"],
+    div[data-baseweb="tab-list"] {
+        display: none !important;
+    }
     div[data-testid="stTabs"].st-key-main_navigation > div[data-baseweb="tab-list"],
     .st-key-main_navigation > div[data-baseweb="tab-list"],
     .st-key-main_navigation > div[data-testid="stTabs"] > div[data-baseweb="tab-list"],
@@ -572,6 +585,109 @@ def set_active_hub(hub):
         st.session_state["my_player_navigation"] = player_labels[hub]
 
 
+FACILITY_HOTSPOTS = [
+    ("play", "Play", 0.13, 0.51),
+    ("uploads", "Data Uploads", 0.35, 0.31),
+    ("caddie", "Caddie", 0.42, 0.58),
+    ("bag", "My Bag", 0.87, 0.67),
+    ("settings", "Settings", 0.89, 0.25),
+    ("music", "My Soundtrack", 0.72, 0.88),
+    ("fuel", "Fuel", 0.57, 0.82),
+]
+
+
+@st.cache_data(show_spinner=False)
+def facility_navigation_image(filename):
+    """Bake the destination labels into the image used by the click component."""
+    path = Path(__file__).resolve().parent / filename
+    image = Image.open(path).convert("RGB")
+    width, height = image.size
+    overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    font_size = max(18, round(width * 0.016))
+    try:
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
+    except OSError:
+        font = ImageFont.load_default()
+
+    for _route, label, x_ratio, y_ratio in FACILITY_HOTSPOTS:
+        x = round(width * x_ratio)
+        y = round(height * y_ratio)
+        text_box = draw.textbbox((0, 0), label, font=font)
+        text_width = text_box[2] - text_box[0]
+        text_height = text_box[3] - text_box[1]
+        pad_x = round(font_size * 0.75)
+        pad_y = round(font_size * 0.48)
+        dot_radius = max(5, round(font_size * 0.19))
+        total_width = text_width + (pad_x * 2) + (dot_radius * 3)
+        total_height = text_height + (pad_y * 2)
+        left = round(x - total_width / 2)
+        top = round(y - total_height / 2)
+        right = left + total_width
+        bottom = top + total_height
+        radius = round(total_height / 2)
+        draw.rounded_rectangle(
+            (left - 5, top - 5, right + 5, bottom + 5),
+            radius=radius + 5,
+            fill=(0, 225, 151, 34),
+        )
+        draw.rounded_rectangle(
+            (left, top, right, bottom),
+            radius=radius,
+            fill=(3, 13, 11, 224),
+            outline=(108, 242, 188, 235),
+            width=max(2, round(width * 0.0012)),
+        )
+        dot_x = left + pad_x + dot_radius
+        dot_y = round((top + bottom) / 2)
+        draw.ellipse(
+            (
+                dot_x - dot_radius,
+                dot_y - dot_radius,
+                dot_x + dot_radius,
+                dot_y + dot_radius,
+            ),
+            fill=(91, 255, 193, 255),
+        )
+        draw.text(
+            (dot_x + dot_radius * 2, round(y - text_height / 2) - 2),
+            label,
+            font=font,
+            fill=(255, 255, 255, 255),
+        )
+
+    return Image.alpha_composite(image.convert("RGBA"), overlay).convert("RGB")
+
+
+def facility_route_from_click(click):
+    """Resolve a displayed-image click to a destination without reloading auth."""
+    if not isinstance(click, dict):
+        return None
+    try:
+        width = float(click["width"])
+        height = float(click["height"])
+        x_ratio = float(click["x"]) / width
+        y_ratio = float(click["y"]) / height
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return None
+
+    # The glowing labels are generous targets. The nearby physical objects are
+    # targets too, so the room behaves like a visual interface rather than a menu.
+    direct_areas = [
+        ("play", 0.00, 0.27, 0.31, 0.67),
+        ("uploads", 0.27, 0.40, 0.22, 0.48),
+        ("caddie", 0.36, 0.49, 0.49, 0.67),
+        ("settings", 0.82, 0.96, 0.16, 0.34),
+        ("bag", 0.82, 0.98, 0.35, 0.82),
+        ("music", 0.65, 0.82, 0.78, 0.98),
+        ("fuel", 0.51, 0.65, 0.74, 0.96),
+    ]
+    for route, left, right, top, bottom in direct_areas:
+        if left <= x_ratio <= right and top <= y_ratio <= bottom:
+            return route
+    return None
+
+
 def render_route_card(destination, title, description, href):
     image_uri = asset_data_uri(DESTINATION_IMAGES.get(destination, ""))
     background = (
@@ -632,29 +748,10 @@ def render_clickable_facility():
         if scenery == "Performance Center Night"
         else FACILITY_HUB_IMAGE_FILE
     )
-    facility_uri = asset_data_uri(scenery_file)
-    if not facility_uri:
+    facility_path = Path(__file__).resolve().parent / scenery_file
+    if not facility_path.exists():
         st.warning("The clubhouse navigation image is not installed.")
         return
-    st.markdown(
-        f"""
-        <div class="myplay-facility-map" aria-label="Interactive My Play clubhouse">
-            <img src="{facility_uri}" alt="High-tech golf performance center" />
-            <span class="myplay-hotspot myplay-hotspot--round">Play</span>
-            <span class="myplay-hotspot myplay-hotspot--uploads">Data Uploads</span>
-            <span class="myplay-hotspot myplay-hotspot--caddie">Caddie</span>
-            <span class="myplay-hotspot myplay-hotspot--bag">My Bag</span>
-            <span class="myplay-hotspot myplay-hotspot--settings">Settings</span>
-            <span class="myplay-hotspot myplay-hotspot--music">My Soundtrack</span>
-            <span class="myplay-hotspot myplay-hotspot--fuel">Fuel</span>
-        </div>
-        <div class="myplay-map-caption">
-            <span>Choose a room with the secure controls below.</span>
-            <span>Your My Play logo always brings you back here.</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
     facility_routes = [
         ("Play", "play"),
         ("Caddie", "caddie"),
@@ -664,17 +761,35 @@ def render_clickable_facility():
         ("Fuel", "fuel"),
         ("Settings", "settings"),
     ]
-    first_row = st.columns(4)
-    second_row = st.columns(3)
-    for column, (label, route) in zip(first_row + second_row, facility_routes):
-        with column:
-            st.button(
-                label,
-                use_container_width=True,
-                key=f"facility_route_{route}",
-                on_click=set_active_hub,
-                args=(route,),
-            )
+    if IMAGE_COORDINATES_AVAILABLE:
+        click = streamlit_image_coordinates(
+            facility_navigation_image(scenery_file),
+            width="stretch",
+            key=f"facility_image_navigation_{scenery_file}",
+            cursor="pointer",
+        )
+        click_token = click.get("unix_time") if isinstance(click, dict) else None
+        if click_token and click_token != st.session_state.get("facility_click_token"):
+            st.session_state["facility_click_token"] = click_token
+            selected_route = facility_route_from_click(click)
+            if selected_route:
+                set_active_hub(selected_route)
+                st.rerun()
+        st.caption("Click a glowing destination—or the matching object—inside your clubhouse.")
+    else:
+        st.image(str(facility_path), use_container_width=True)
+        st.caption("Choose a clubhouse destination below.")
+        first_row = st.columns(4)
+        second_row = st.columns(3)
+        for column, (label, route) in zip(first_row + second_row, facility_routes):
+            with column:
+                if st.button(
+                    label,
+                    use_container_width=True,
+                    key=f"facility_route_{route}",
+                ):
+                    set_active_hub(route)
+                    st.rerun()
 def render_beta_data_notice():
     st.markdown("#### Privacy & Data Notice")
     st.caption("Effective September 3, 2026 · My Play public beta")

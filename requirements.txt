@@ -6,3 +6,4 @@ openai
 streamlit-geolocation
 openpyxl
 imageio-ffmpeg
+streamlit-image-coordinates==0.4.1
