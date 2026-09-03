@@ -688,6 +688,18 @@ def facility_route_from_click(click):
     return None
 
 
+def handle_facility_image_click(component_key):
+    """Run as a widget callback, before the hidden navigation tabs are built."""
+    click = st.session_state.get(component_key)
+    click_token = click.get("unix_time") if isinstance(click, dict) else None
+    if not click_token or click_token == st.session_state.get("facility_click_token"):
+        return
+    st.session_state["facility_click_token"] = click_token
+    selected_route = facility_route_from_click(click)
+    if selected_route:
+        set_active_hub(selected_route)
+
+
 def render_route_card(destination, title, description, href):
     image_uri = asset_data_uri(DESTINATION_IMAGES.get(destination, ""))
     background = (
@@ -762,19 +774,14 @@ def render_clickable_facility():
         ("Settings", "settings"),
     ]
     if IMAGE_COORDINATES_AVAILABLE:
-        click = streamlit_image_coordinates(
+        component_key = f"facility_image_navigation_{scenery_file}"
+        streamlit_image_coordinates(
             facility_navigation_image(scenery_file),
             width="stretch",
-            key=f"facility_image_navigation_{scenery_file}",
+            key=component_key,
             cursor="pointer",
+            on_click=lambda: handle_facility_image_click(component_key),
         )
-        click_token = click.get("unix_time") if isinstance(click, dict) else None
-        if click_token and click_token != st.session_state.get("facility_click_token"):
-            st.session_state["facility_click_token"] = click_token
-            selected_route = facility_route_from_click(click)
-            if selected_route:
-                set_active_hub(selected_route)
-                st.rerun()
         st.caption("Click a glowing destination—or the matching object—inside your clubhouse.")
     else:
         st.image(str(facility_path), use_container_width=True)
