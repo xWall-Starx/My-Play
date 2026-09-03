@@ -6,6 +6,7 @@ import json
 import re
 import io
 import hashlib
+import html
 import os
 import math
 import uuid
@@ -31,7 +32,7 @@ except Exception:
     GEOLOCATION_AVAILABLE = False
 
 # ============================================================
-# MY PLAY V3
+# MY PLAY V4 — MY PLAYER V1
 # Internet-connected Personal Golf Caddie
 # ============================================================
 
@@ -44,19 +45,144 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Keep the beta interface calmer and more mobile-friendly. */
+    /* My Play design system: calm, spacious, mobile-first. */
+    :root {
+        --myplay-green: #39775d;
+        --myplay-green-soft: color-mix(in srgb, var(--primary-color) 5%, var(--background-color));
+        --myplay-ink: var(--text-color);
+        --myplay-muted: color-mix(in srgb, var(--text-color) 68%, transparent);
+        --myplay-border: color-mix(in srgb, var(--text-color) 16%, transparent);
+        --myplay-surface: var(--secondary-background-color);
+    }
+    .block-container { max-width: 1180px; padding-top: 1.4rem; padding-bottom: 4rem; }
+    h1, h2, h3 { color: var(--myplay-ink); letter-spacing: -0.02em; }
+    p, label, .stCaption { line-height: 1.55; }
     div[data-testid="stAlert"] { margin-top: 0.25rem; margin-bottom: 0.25rem; }
     div[data-testid="stMetric"] { padding: 0.1rem 0; }
-    div[data-testid="stExpander"] { margin-bottom: 0.35rem; }
-    .stButton > button { min-height: 2.4rem; }
+    div[data-testid="stExpander"] {
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--myplay-border);
+        border-radius: 1rem;
+        background: color-mix(in srgb, var(--secondary-background-color) 98%, var(--text-color) 2%);
+        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+        transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+    }
+    div[data-testid="stExpander"]:hover {
+        border-color: color-mix(in srgb, var(--primary-color) 34%, var(--myplay-border));
+        box-shadow: 0 9px 24px rgba(0, 0, 0, 0.11);
+        transform: translateY(-1px);
+    }
+    div[data-testid="stExpander"] details { border: 0; border-radius: 1rem; }
+    div[data-testid="stExpander"] summary {
+        min-height: 3.6rem;
+        padding: 0.45rem 0.85rem;
+        font-weight: 720;
+        letter-spacing: -0.01em;
+    }
+    div[data-testid="stExpander"] summary:hover {
+        background: color-mix(in srgb, var(--text-color) 4%, transparent);
+    }
+    .stButton > button { min-height: 2.75rem; border-radius: 0.75rem; font-weight: 650; }
+    .stButton > button[kind="primary"] { background: var(--myplay-green); border-color: var(--myplay-green); }
+    div[data-baseweb="select"] > div, .stTextInput input, .stNumberInput input,
+    .stTextArea textarea {
+        border-radius: 0.9rem;
+        border-color: var(--myplay-border);
+        background: var(--secondary-background-color);
+    }
+    div[data-testid="stDataFrame"] { border: 1px solid var(--myplay-border); border-radius: 0.8rem; overflow: hidden; }
+    div[data-baseweb="tab-list"] { gap: 0.4rem; }
+    button[data-baseweb="tab"] { border-radius: 0.7rem 0.7rem 0 0; padding-left: 1rem; padding-right: 1rem; }
+    .myplay-hero {
+        padding: 1.25rem 1.35rem;
+        border: 1px solid var(--myplay-border);
+        border-radius: 1rem;
+        background: linear-gradient(135deg, var(--myplay-surface) 0%, var(--myplay-green-soft) 100%);
+        margin-bottom: 1rem;
+    }
+    .myplay-hero h2 { margin: 0 0 0.25rem 0; }
+    .myplay-hero p { color: var(--myplay-muted); margin: 0; }
+    .myplay-card {
+        min-height: 126px;
+        padding: 1rem;
+        border: 1px solid var(--myplay-border);
+        border-radius: 0.9rem;
+        background: var(--myplay-surface);
+        box-shadow: 0 4px 18px rgba(19, 49, 33, 0.05);
+    }
+    .myplay-card h4 { margin: 0 0 0.35rem 0; color: var(--myplay-ink); }
+    .myplay-card p { margin: 0; color: var(--myplay-muted); font-size: 0.92rem; }
+    .myplay-profile-banner {
+        padding: 1.2rem 1.3rem;
+        border: 1px solid var(--myplay-border);
+        border-radius: 1rem;
+        background: linear-gradient(125deg, var(--myplay-surface), var(--myplay-green-soft));
+        margin-bottom: 0.85rem;
+    }
+    .myplay-profile-banner h2 { margin: 0 0 0.25rem 0; }
+    .myplay-profile-banner p { margin: 0; color: var(--myplay-muted); }
+    .myplay-eyebrow { color: var(--myplay-green); font-weight: 750; letter-spacing: 0.08em; font-size: 0.78rem; }
+    .myplay-insight {
+        padding: 0.85rem 0;
+        border-bottom: 1px solid var(--myplay-border);
+    }
+    .myplay-insight:last-child { border-bottom: 0; }
+    .myplay-insight strong { display: block; margin-bottom: 0.16rem; }
+    .myplay-insight span { color: var(--myplay-muted); }
+    .myplay-brandbar { display: flex; align-items: center; gap: 0.85rem; }
+    .myplay-brandmark {
+        width: 3rem;
+        height: 3rem;
+        display: grid;
+        place-items: center;
+        border-radius: 0.9rem;
+        background: color-mix(in srgb, var(--text-color) 10%, var(--secondary-background-color));
+        color: var(--text-color);
+        font-weight: 900;
+        letter-spacing: -0.08em;
+        box-shadow: 0 7px 20px rgba(0, 0, 0, 0.10);
+    }
+    .myplay-brandcopy h1 { margin: 0; }
+    .myplay-brandcopy p { margin: 0; color: var(--myplay-muted); font-size: 0.88rem; }
+    [class*="st-key-club_card_"] button {
+        min-height: 8.5rem;
+        width: 100%;
+        padding: 1rem 1.05rem;
+        justify-content: flex-start;
+        text-align: left;
+        white-space: pre-line;
+        line-height: 1.45;
+        border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent);
+        border-radius: 1rem;
+        background: var(--secondary-background-color);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+    }
+    [class*="st-key-club_card_"] button:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.13);
+    }
+    [class*="st-key-club_card_"] button p {
+        white-space: pre-line;
+        text-align: left;
+        width: 100%;
+    }
     div[data-testid="stAudioInput"] { margin-top: 0.2rem; margin-bottom: 0.2rem; }
     div[data-testid="stChatMessage"] { padding-top: 0.35rem; padding-bottom: 0.35rem; }
+    @media (max-width: 700px) {
+        .block-container { padding: 0.8rem 0.8rem 3rem; }
+        .myplay-card { min-height: auto; }
+        button[data-baseweb="tab"] { padding-left: 0.55rem; padding-right: 0.55rem; }
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
 PROFILE_FILE = "player_profile.json"
+GAME_PROFILE_FILE = "my_game_profile.json"
 BAG_FILE = "my_bag.json"
 SHOT_FILE = "shot_history.csv"
 REMINDER_FILE = "swing_reminders.txt"
@@ -64,6 +190,7 @@ COURSE_CACHE_FILE = "course_cache.json"
 ACTIVE_ROUND_FILE = "active_round.json"
 ROUND_HISTORY_FILE = "round_history.csv"
 PLAYER_EVIDENCE_FILE = "player_evidence.csv"
+RAW_IMPORT_DIR = "raw_imports"
 SWING_VIDEO_FILE = "swing_video_history.csv"
 SWING_VIDEO_DIR = "swing_videos"
 LOCAL_COURSE_FILE = "opengolfapi-us.csv.gz"
@@ -76,10 +203,27 @@ NOMINATIM_BASE = "https://nominatim.openstreetmap.org/search"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
 DEFAULT_PROFILE = {
+    "display_name": "",
     "handedness": "Right-handed",
     "handicap": "",
+    "typical_score": "",
+    "experience_level": "Developing",
+    "preferred_scoring_leave": 100,
     "default_course": "",
     "default_state": "NJ"
+}
+
+DEFAULT_GAME_PROFILE = {
+    "driver_miss": "unknown",
+    "wood_miss": "unknown",
+    "iron_miss": "unknown",
+    "wedge_miss": "unknown",
+    "normal_shot_shape": "Unknown",
+    "strongest_area": "Not selected",
+    "weakest_area": "Not selected",
+    "preferred_approach_distance": 100,
+    "trouble_tendency": "Not selected",
+    "playing_priority": "Balanced",
 }
 
 DEFAULT_BAG = [
@@ -96,6 +240,413 @@ DEFAULT_BAG = [
     {"Club": "56° Wedge", "Brand / Model": "Mizuno", "Loft": "56°", "Stock Carry": 110, "Typical Miss": "slight pull"},
     {"Club": "60° Wedge", "Brand / Model": "Titleist Vokey", "Loft": "60°", "Stock Carry": 100, "Typical Miss": "slight pull"}
 ]
+
+
+# Controlled club vocabulary. Display labels stay friendly while canonical IDs
+# keep analytics, imports, voice commands, and the caddie consistent.
+CLUB_CATALOG = {
+    "Driver": ["Driver", "Mini Driver"],
+    "Fairway Wood": [f"{number} Wood" for number in range(2, 16)],
+    "Hybrid / Rescue": [f"{number} Hybrid" for number in range(1, 10)],
+    "Utility / Driving Iron": [
+        f"{number} Utility Iron" for number in range(1, 7)
+    ] + [f"{number} Driving Iron" for number in range(1, 7)],
+    "Iron": [f"{number} Iron" for number in range(1, 10)],
+    "Wedge": [
+        "Pitching Wedge",
+        "Approach Wedge",
+        "Gap Wedge",
+        "Sand Wedge",
+        "Lob Wedge",
+    ] + [f"{loft}° Wedge" for loft in range(40, 73)],
+    "Chipper": ["Chipper"],
+    "Putter": [
+        "Blade Putter",
+        "Mallet Putter",
+        "Mid-Mallet Putter",
+        "Armlock Putter",
+        "Broomstick Putter",
+        "Putter",
+    ],
+    "Other / Custom": ["Custom Club"],
+}
+
+CLUB_BRANDS = ["Select Brand"] + sorted([
+    "Adams", "Argolf", "Armour", "Axis1", "Ben Hogan", "Bettinardi",
+    "Boccieri", "BombTech", "Bridgestone", "Browning", "Burke",
+    "Byron Morgan", "Callaway", "Cleveland", "Cobra", "Costco Kirkland",
+    "Cure", "Edel", "Fourteen", "Founders Club", "Gauge Design", "Geek Golf",
+    "GigaGolf", "Haywood", "Honma", "Inesis", "KZG", "LAB Golf", "Lazrus",
+    "MacGregor", "Majek", "Maltby", "Miura", "Mizuno", "National Custom Works",
+    "Never Compromise", "Nike", "Odyssey", "OnOff", "Orka", "Orlimar",
+    "Parsons Xtreme Golf (PXG)", "Ping", "PowerBilt", "PRGR", "PXG", "Ram",
+    "Ray Cook", "Robin Golf", "Royal Collection", "Scotty Cameron", "SeeMore",
+    "Snake Eyes", "Solus", "Spalding", "Srixon", "Sub 70", "Takomo",
+    "TaylorMade", "TearDrop", "Titleist", "Tommy Armour", "Top Flite",
+    "Tour Edge", "Vega", "Vice", "Wilson", "Wishon", "XXIO", "Yonex",
+    "Other / Custom",
+])
+
+# Brand-aware model choices. The final fallback keeps unusual, vintage, junior,
+# women's, component, and newly released equipment available without forcing
+# every golfer to type a model.
+BRAND_MODEL_CATALOG = {
+    "Callaway": {
+        "Driver": ["Quantum", "Elyte", "Paradym Ai Smoke", "Paradym", "Rogue ST", "Epic", "Mavrik", "Big Bertha", "XR", "X2 Hot"],
+        "Fairway Wood": ["Quantum", "Elyte", "Paradym Ai Smoke", "Paradym", "Rogue ST", "Epic", "Mavrik", "Big Bertha", "Apex Utility Wood"],
+        "Hybrid / Rescue": ["Quantum", "Elyte", "Paradym Ai Smoke", "Paradym", "Apex", "Rogue ST", "Mavrik", "Big Bertha"],
+        "Utility / Driving Iron": ["Apex UT", "X Forged UT", "Apex Utility Wood"],
+        "Iron": ["Apex", "Apex Pro", "Apex CB", "Apex MB", "Elyte", "Paradym", "Paradym Ai Smoke", "Rogue ST", "Mavrik", "Big Bertha", "X Forged", "X-20", "X-22", "X-24 Hot"],
+        "Wedge": ["Opus", "Opus Platinum", "Jaws Raw", "Mack Daddy CB", "Mack Daddy 5 Jaws", "Mack Daddy 4"],
+    },
+    "TaylorMade": {
+        "Driver": ["Qi4D", "Qi35", "Qi10", "BRNR Mini", "Stealth 2", "Stealth", "SIM2", "SIM", "M6", "M5", "M4", "M3", "M2", "R15", "SLDR", "RBZ"],
+        "Fairway Wood": ["Qi4D", "Qi35", "Qi10", "Stealth 2", "Stealth", "SIM2", "SIM", "M6", "M5", "M4", "M2", "RBZ"],
+        "Hybrid / Rescue": ["Qi4D Rescue", "Qi35 Rescue", "Qi10 Rescue", "Stealth 2 Rescue", "Stealth Rescue", "SIM2 Rescue", "SIM Rescue", "M6 Rescue", "M4 Rescue", "RBZ Rescue"],
+        "Utility / Driving Iron": ["P-UDI", "P-DHY", "Stealth UDI", "SIM UDI", "GAPR Lo", "GAPR Mid", "GAPR Hi"],
+        "Iron": ["P790", "P770", "P7CB", "P7MC", "P7MB", "P7TW", "Qi", "Qi HL", "Stealth", "SIM2 Max", "SIM Max", "M6", "M4", "M2", "RocketBladez", "RBZ"],
+        "Wedge": ["Milled Grind 5", "Milled Grind 4", "Milled Grind 3", "Hi-Toe 4", "Hi-Toe 3", "Hi-Toe Raw", "Tour Preferred"],
+        "Putter": ["Spider Tour", "Spider ZT", "Spider 5K-ZT", "Spider GTX", "Spider GT", "Spider X", "Spider EX", "TP Reserve", "TP Hydro Blast"],
+    },
+    "Titleist": {
+        "Driver": ["GTS2", "GTS3", "GTS4", "GTS300 Mini", "GT1", "GT2", "GT3", "GT4", "TSR1", "TSR2", "TSR3", "TSR4", "TSi1", "TSi2", "TSi3", "TSi4", "TS2", "TS3", "917", "915", "913", "910"],
+        "Fairway Wood": ["GTS2", "GTS3", "GT1", "GT2", "GT3", "TSR1", "TSR2", "TSR3", "TSi1", "TSi2", "TSi3", "TS2", "TS3", "917", "915"],
+        "Hybrid / Rescue": ["GT1", "GT2", "GT3", "TSR1", "TSR2", "TSR3", "TSi1", "TSi2", "TSi3", "818 H1", "818 H2", "816 H1", "816 H2"],
+        "Utility / Driving Iron": ["U•505", "T200 Utility", "U500", "U510", "712U"],
+        "Iron": ["T100", "T150", "T200", "T250", "T350", "620 CB", "620 MB", "AP1", "AP2", "AP3", "CB", "MB", "DCI"],
+        "Wedge": ["Vokey SM11", "Vokey SM10", "Vokey SM9", "Vokey SM8", "Vokey SM7", "Vokey SM6", "Vokey WedgeWorks"],
+    },
+    "Ping": {
+        "Driver": ["G440", "G430", "G425", "G410", "G400", "G", "G30", "Anser", "i25"],
+        "Fairway Wood": ["G440", "G430", "G425", "G410", "G400", "G", "G30", "i25"],
+        "Hybrid / Rescue": ["G440", "G430", "G425", "G410", "G400", "G30", "Anser", "i25"],
+        "Utility / Driving Iron": ["iCrossover", "G430 Crossover", "G425 Crossover", "G410 Crossover"],
+        "Iron": ["i240", "i230", "i530", "i525", "i500", "Blueprint S", "Blueprint T", "G440", "G430", "G425", "G410", "G400", "G30", "i210", "i200", "Eye2"],
+        "Wedge": ["s159", "Glide 4.0", "Glide 3.0", "Glide Forged Pro", "Glide 2.0", "Eye2"],
+        "Putter": ["PLD Milled", "Scottsdale", "Sigma 2", "Heppler", "Vault", "Anser", "Tyne", "Fetch"],
+    },
+    "Cobra": {
+        "Driver": ["OPTM", "DS-ADAPT", "DARKSPEED", "AEROJET", "LTDx", "RADSPEED", "SPEEDZONE", "F9 Speedback", "LTD", "Bio Cell", "AMP Cell"],
+        "Fairway Wood": ["OPTM", "DS-ADAPT", "DARKSPEED", "AEROJET", "LTDx", "RADSPEED", "SPEEDZONE", "F9 Speedback"],
+        "Hybrid / Rescue": ["DS-ADAPT", "DARKSPEED", "AEROJET", "LTDx", "RADSPEED", "KING TEC", "T-Rail"],
+        "Utility / Driving Iron": ["KING TEC Utility", "KING Utility", "KING Forged Tec Utility"],
+        "Iron": ["KING TEC", "KING Forged Tec", "KING Tour", "KING CB", "KING MB", "DS-ADAPT", "DARKSPEED", "AEROJET", "LTDx", "T-Rail", "F9 Speedback"],
+        "Wedge": ["KING", "KING-X", "SNAKEBITE", "SNAKEBITE-X", "KING MIM"],
+        "Putter": ["3D Printed", "Vintage", "KING", "Supernova", "Agera", "Grandsport"],
+    },
+    "Mizuno": {
+        "Driver": ["ST-MAX 230", "ST-Z 230", "ST-X 230", "ST-Z 220", "ST-X 220", "ST200", "ST190", "JPX 900"],
+        "Fairway Wood": ["ST-MAX 230", "ST-Z 230", "ST-X 220", "ST-Z 220", "ST200", "ST190", "JPX 900"],
+        "Hybrid / Rescue": ["ST-MAX 230", "ST-Z 230", "ST-X 220", "CLK", "JPX Fli-Hi"],
+        "Utility / Driving Iron": ["Mizuno Pro Fli-Hi", "MP-20 HMB", "JPX Fli-Hi"],
+        "Iron": ["JPX 925 Hot Metal", "JPX 925 Hot Metal Pro", "JPX 925 Forged", "JPX 925 Tour", "Mizuno Pro 245", "Mizuno Pro 243", "Mizuno Pro 241", "Mizuno Pro 225", "Mizuno Pro 223", "Mizuno Pro 221", "JPX 923", "JPX 921", "JPX 919", "MP-20", "MP-18"],
+        "Wedge": ["T-1", "T-3", "T24", "S23", "T22", "T20", "S18"],
+        "Putter": ["M.Craft OMOI", "M.Craft", "M.Craft X"],
+    },
+    "Srixon": {
+        "Driver": ["ZXi", "ZX Mk II", "ZX5", "ZX7", "Z 785", "Z 765", "Z 565"],
+        "Fairway Wood": ["ZXi", "ZX Mk II", "ZX", "Z F85", "Z F65"],
+        "Hybrid / Rescue": ["ZXi", "ZX Mk II", "ZX", "Z H85", "Z H65"],
+        "Utility / Driving Iron": ["ZXiU", "ZX Mk II Utility", "ZX Utility", "Z U85", "Z U65"],
+        "Iron": ["ZXi4", "ZXi5", "ZXi7", "Z-Forged II", "ZX4 Mk II", "ZX5 Mk II", "ZX7 Mk II", "ZX4", "ZX5", "ZX7", "Z 585", "Z 785", "Z 565", "Z 765"],
+    },
+    "Cleveland": {
+        "Driver": ["Launcher XL 2", "Launcher XL", "Launcher HB Turbo", "Launcher HB"],
+        "Fairway Wood": ["Launcher XL 2", "Launcher XL Halo", "Launcher HB Turbo", "Launcher HB"],
+        "Hybrid / Rescue": ["Launcher XL 2 Halo", "Launcher XL Halo", "Launcher Halo", "Launcher HB"],
+        "Iron": ["ZipCore XL", "Launcher XL", "Launcher XL Halo", "Launcher UHX", "Launcher HB Turbo", "Launcher HB"],
+        "Wedge": ["RTZ", "RTX 6 ZipCore", "RTX ZipCore", "CBX 4 ZipCore", "CBX Full-Face 2", "CBX ZipCore", "Smart Sole Full-Face", "Smart Sole 4"],
+        "Chipper": ["Smart Sole Chipper"],
+        "Putter": ["HB SOFT 2", "Frontline Elite", "Frontline", "Huntington Beach SOFT", "Huntington Beach"],
+    },
+    "Wilson": {
+        "Driver": ["DYNAPWR Max", "DYNAPWR Carbon", "DYNAPWR LS", "DYNAPWR", "Launch Pad", "Staff Model", "C300", "Triton"],
+        "Fairway Wood": ["DYNAPWR", "Launch Pad", "Staff Model", "C300"],
+        "Hybrid / Rescue": ["DYNAPWR", "Launch Pad", "Staff Model", "D9", "D7"],
+        "Utility / Driving Iron": ["Staff Model Utility", "Staff Model Driving Iron"],
+        "Iron": ["DYNAPWR", "DYNAPWR Forged", "Staff Model CB", "Staff Model Blade", "Staff Model RB Utility", "Launch Pad", "D9", "D7", "C300 Forged", "FG Tour"],
+        "Wedge": ["Staff Model ZM", "Staff Model", "Staff Model HT", "Harmonized"],
+        "Putter": ["Infinite", "Staff Model", "Buckingham", "The Bean", "The L", "West Loop"],
+    },
+    "PXG": {
+        "Driver": ["Black Ops", "Black Ops Tour-1", "0311 GEN6", "0311 GEN5", "0311 GEN4", "0811 X", "0811 XF", "Secret Weapon Mini"],
+        "Fairway Wood": ["Black Ops", "0311 GEN6", "0311 GEN5", "0311 GEN4", "0341 X"],
+        "Hybrid / Rescue": ["Black Ops", "0311 GEN6", "0311 GEN5", "0311 GEN4", "0317 X"],
+        "Utility / Driving Iron": ["0311 X GEN6", "0311 X GEN5", "0311 X GEN4", "0311 X Driving Iron"],
+        "Iron": ["0311 GEN7 P", "0311 GEN7 XP", "0311 GEN7 T", "0317 CB", "0317 ST", "0317 T", "0311 GEN6 P", "0311 GEN6 XP", "0311 GEN6 T", "0211 XCOR2", "0211 ST"],
+        "Wedge": ["Sugar Daddy III", "Sugar Daddy II", "Sugar Daddy", "0311 Forged", "0311 Milled"],
+        "Putter": ["Battle Ready II", "Battle Ready", "Allan", "Brandon", "Bat Attack", "Blackbird", "Closer", "Gunboat", "Hellcat", "Mustang"],
+    },
+    "Tour Edge": {
+        "Driver": ["Exotics C725", "Exotics E725", "Exotics C723", "Exotics E723", "Hot Launch C524", "Hot Launch E524", "Hot Launch C523", "Hot Launch E523"],
+        "Fairway Wood": ["Exotics C725", "Exotics E725", "Exotics C723", "Exotics E723", "Hot Launch C524", "Hot Launch E524"],
+        "Hybrid / Rescue": ["Exotics C725", "Exotics E725", "Exotics C723", "Exotics E723", "Hot Launch C524", "Hot Launch E524", "Hot Launch Iron-Wood"],
+        "Utility / Driving Iron": ["Exotics C725 Ti-Utility", "Exotics C723 Utility", "Hot Launch Iron-Wood"],
+        "Iron": ["Exotics C725", "Exotics E725", "Exotics C723", "Exotics E723", "Hot Launch C524", "Hot Launch E524", "Hot Launch Iron-Wood"],
+        "Wedge": ["Exotics Wingman", "Hot Launch Super Spin"],
+        "Putter": ["Wingman", "Template Series"],
+    },
+    "Odyssey": {
+        "Putter": ["Ai-ONE", "Ai-ONE Milled", "Square 2 Square", "Square 2 Square TRI-HOT", "White Hot OG", "White Hot Versa", "Tri-Hot 5K", "Eleven", "Ten", "Stroke Lab", "O-Works", "Toulon Design"],
+    },
+    "Scotty Cameron": {
+        "Putter": ["Studio Style", "Phantom", "Super Select", "Special Select", "Select", "Futura", "GOLO", "California", "Studio Stainless", "Circa 62", "Newport", "Newport 2"],
+    },
+    "Bettinardi": {
+        "Putter": ["BB Series", "Queen B", "INOVAI", "Studio Stock", "HLX", "Antidote", "Signature Series"],
+        "Wedge": ["HLX 6.0", "HLX 5.0", "HLX 3.0"],
+    },
+    "LAB Golf": {
+        "Putter": ["OZ.1i", "OZ.1", "DF3", "MEZZ.1 MAX", "MEZZ.1", "LINK.1", "Directed Force 2.1"],
+    },
+    "Miura": {
+        "Iron": ["CB-302", "MC-502", "TC-201", "MB-101", "KM-700", "PI-401", "IC-602", "CB-301", "MC-501"],
+        "Wedge": ["Tour Wedge High Bounce", "Tour Wedge Low Bounce", "Milled Tour Wedge", "K-Grind 2.0", "Y-Grind"],
+    },
+    "Sub 70": {
+        "Driver": ["859 Pro", "849 Pro", "849D", "839D"],
+        "Fairway Wood": ["949X Pro", "949X", "939X"],
+        "Hybrid / Rescue": ["949X Pro", "949X", "939X"],
+        "Utility / Driving Iron": ["699 Pro Utility", "699 Utility"],
+        "Iron": ["699 v2", "699 Pro v2", "659 CB", "659 TC", "659 MB", "639 CB", "639 MB", "TAIII", "799", "Sycamore 005"],
+        "Wedge": ["286", "JB Forged", "TAIII Wedge"],
+        "Putter": ["004", "005 Wide Blade", "007", "008", "Sycamore"],
+    },
+    "Takomo": {
+        "Iron": ["Iron 101", "Iron 101T", "Iron 201", "Iron 301 CB", "Iron 301 MB"],
+        "Utility / Driving Iron": ["Iron 101U"],
+        "Wedge": ["Skyforger Wedge"],
+    },
+    "Honma": {
+        "Driver": ["TW767", "TW757", "Beres", "Tour World GS", "XP-1"],
+        "Fairway Wood": ["TW767", "TW757", "Beres", "Tour World GS", "XP-1"],
+        "Hybrid / Rescue": ["TW767", "TW757", "Beres", "Tour World GS", "XP-1"],
+        "Iron": ["TW767", "TW757", "Beres", "Tour World GS", "TR20", "XP-1"],
+        "Wedge": ["TW-W", "Beres Wedge"],
+    },
+    "XXIO": {
+        "Driver": ["XXIO 14", "XXIO 13", "XXIO 12", "XXIO Prime", "XXIO X"],
+        "Fairway Wood": ["XXIO 14", "XXIO 13", "XXIO 12", "XXIO Prime", "XXIO X"],
+        "Hybrid / Rescue": ["XXIO 14", "XXIO 13", "XXIO 12", "XXIO Prime", "XXIO X"],
+        "Iron": ["XXIO 14", "XXIO 13", "XXIO 12", "XXIO Prime", "XXIO X"],
+    },
+    "Nike": {
+        "Driver": ["Vapor Fly", "Vapor Speed", "Vapor Pro", "Covert 2.0", "Covert", "VR_S Covert", "VR Pro", "SQ Machspeed", "SQ Sumo"],
+        "Fairway Wood": ["Vapor Fly", "Vapor Speed", "Covert 2.0", "Covert", "VR_S", "SQ Machspeed"],
+        "Hybrid / Rescue": ["Vapor Fly", "Vapor Speed", "Covert 2.0", "Covert", "VR_S", "SQ Machspeed"],
+        "Utility / Driving Iron": ["Vapor Fly Pro", "VR Pro Combo"],
+        "Iron": ["Vapor Fly", "Vapor Fly Pro", "Vapor Pro Combo", "Vapor Pro", "VR Pro Combo", "VR Pro Blade", "VR_S Covert", "SQ Machspeed", "Slingshot"],
+        "Wedge": ["Engage", "VR Forged", "SV Tour"],
+        "Putter": ["Method Origin", "Method Core", "Method", "IC"],
+    },
+    "Adams": {
+        "Driver": ["XTD", "Speedline Super LS", "Speedline Fast 12", "Speedline"],
+        "Fairway Wood": ["Tight Lies", "XTD", "Speedline Super LS", "Speedline"],
+        "Hybrid / Rescue": ["Idea", "Tight Lies", "XTD", "Super Proto", "Pro Black"],
+        "Iron": ["Idea", "XTD", "CB3", "CB2", "CMB", "A-Tour"],
+    },
+}
+
+MODEL_FALLBACKS = ["Model unknown", "Other / Model not listed"]
+
+
+def model_choices_for(brand, category, existing_model=""):
+    brand = {
+        "Parsons Xtreme Golf (PXG)": "PXG",
+    }.get(brand, brand)
+    choices = list(BRAND_MODEL_CATALOG.get(brand, {}).get(category, []))
+    existing_model = str(existing_model or "").strip()
+    if existing_model and existing_model not in choices:
+        choices.insert(0, existing_model)
+    for fallback in MODEL_FALLBACKS:
+        if fallback not in choices:
+            choices.append(fallback)
+    return choices
+
+SHOT_SHAPES = [
+    "Unknown", "Straight", "Draw", "Fade", "High", "Low", "Low liner",
+    "Variable / Both ways",
+]
+
+TYPICAL_MISSES = [
+    "unknown", "straight", "slight pull", "pull", "pull hook", "hook",
+    "slight fade", "fade right", "push", "push fade", "slice", "thin",
+    "fat", "toe", "heel", "short", "long", "variable / both ways",
+]
+
+CONFIDENCE_LEVELS = ["Low", "Developing", "Comfortable", "High", "Go-to club"]
+
+
+def canonical_club_id(club_name):
+    """Return a stable analytics ID for friendly labels such as 3 Wood."""
+    normalized = re.sub(r"[^a-z0-9]+", "_", str(club_name or "").lower()).strip("_")
+    aliases = {
+        "3w": "3_wood",
+        "three_wood": "3_wood",
+        "pw": "pitching_wedge",
+        "aw": "approach_wedge",
+        "gw": "gap_wedge",
+        "sw": "sand_wedge",
+        "lw": "lob_wedge",
+    }
+    return aliases.get(normalized, normalized)
+
+
+def infer_club_category(club_name):
+    target = canonical_club_id(club_name)
+    for category, choices in CLUB_CATALOG.items():
+        if any(canonical_club_id(choice) == target for choice in choices):
+            return category
+    return "Other / Custom"
+
+
+def split_brand_model(club):
+    brand = str(club.get("Brand", "") or "").strip()
+    model = str(club.get("Model", "") or "").strip()
+    combined = str(club.get("Brand / Model", "") or "").strip()
+    if brand in CLUB_BRANDS and brand != "Select Brand":
+        return brand, model
+    if brand and not model:
+        combined = brand
+    elif brand and model:
+        combined = f"{brand} {model}".strip()
+    if not combined:
+        return brand, model
+    for candidate in sorted(CLUB_BRANDS, key=len, reverse=True):
+        if candidate == "Other / Custom":
+            continue
+        if combined.lower() == candidate.lower():
+            return candidate, ""
+        if combined.lower().startswith(candidate.lower() + " "):
+            return candidate, combined[len(candidate):].strip()
+    return combined, ""
+
+
+def build_club_record(category, club_name, brand, model, loft, carry,
+                      typical_miss, shot_shape, confidence):
+    loft_text = ""
+    if loft not in (None, ""):
+        loft_text = f"{float(loft):g}°"
+    brand_model = " ".join(value for value in [brand, model] if value).strip()
+    return {
+        "Club": club_name,
+        "Category": category,
+        "Canonical ID": canonical_club_id(club_name),
+        "Brand": brand,
+        "Model": model,
+        "Brand / Model": brand_model,
+        "Loft": loft_text,
+        "Stock Carry": float(carry),
+        "Typical Miss": typical_miss,
+        "Shot Shape": shot_shape,
+        "Confidence": confidence,
+    }
+
+
+def render_club_builder(prefix, existing=None):
+    """Render a progressive, click-first club editor and return its current record."""
+    existing = existing or {}
+    current_name = str(existing.get("Club", "") or "")
+    current_category = existing.get("Category") or infer_club_category(current_name)
+    categories = list(CLUB_CATALOG.keys())
+    if current_category not in categories:
+        current_category = "Other / Custom"
+
+    category = st.selectbox(
+        "1. Club category", categories, index=categories.index(current_category),
+        key=f"{prefix}_category",
+    )
+    club_choices = list(CLUB_CATALOG[category])
+    if current_name and current_name not in club_choices and category != "Other / Custom":
+        club_choices.append(current_name)
+    club_name = st.selectbox(
+        "2. Exact club", club_choices,
+        index=club_choices.index(current_name) if current_name in club_choices else 0,
+        key=f"{prefix}_club_name",
+    )
+    if category == "Other / Custom":
+        club_name = st.text_input(
+            "Custom club name", value=current_name if current_name != "Custom Club" else "",
+            placeholder="Example: One-length 7 Iron", key=f"{prefix}_custom_club_name",
+        ).strip()
+
+    existing_brand, existing_model = split_brand_model(existing)
+    brand_choices = list(CLUB_BRANDS)
+    if existing_brand and existing_brand not in brand_choices:
+        brand_choices.insert(0, existing_brand)
+    brand = st.selectbox(
+        "3. Brand", brand_choices,
+        index=brand_choices.index(existing_brand) if existing_brand in brand_choices else 0,
+        key=f"{prefix}_brand",
+    )
+    if brand == "Other / Custom":
+        brand = st.text_input(
+            "Custom brand", placeholder="Enter the manufacturer",
+            key=f"{prefix}_custom_brand",
+        ).strip()
+    elif brand == "Select Brand":
+        brand = ""
+    model_choices = model_choices_for(brand, category, existing_model)
+    model = st.selectbox(
+        "4. Model", model_choices,
+        index=(
+            model_choices.index(existing_model)
+            if existing_model in model_choices
+            else model_choices.index("Model unknown")
+        ),
+        key=f"{prefix}_model_choice",
+        help="Models are filtered by the selected brand and club category.",
+    )
+    if model == "Other / Model not listed":
+        model = st.text_input(
+            "Enter model", value="",
+            placeholder="Type the model only when it is not listed",
+            key=f"{prefix}_custom_model",
+        ).strip()
+
+    loft_text = str(existing.get("Loft", "") or "").replace("°", "").strip()
+    try:
+        loft_default = float(loft_text) if loft_text else None
+    except Exception:
+        loft_default = None
+    detail_col1, detail_col2 = st.columns(2)
+    with detail_col1:
+        loft = st.number_input(
+            "Loft (optional)", min_value=0.0, max_value=80.0,
+            value=loft_default, step=0.5, key=f"{prefix}_loft",
+        )
+        carry = st.number_input(
+            "Normal carry (yards)", min_value=1.0, max_value=400.0,
+            value=float(existing.get("Stock Carry", 150) or 150), step=1.0,
+            key=f"{prefix}_carry",
+        )
+        shape_default = existing.get("Shot Shape", "Unknown")
+        if shape_default not in SHOT_SHAPES:
+            shape_default = "Unknown"
+        shot_shape = st.selectbox(
+            "Normal shot shape", SHOT_SHAPES, index=SHOT_SHAPES.index(shape_default),
+            key=f"{prefix}_shape",
+        )
+    with detail_col2:
+        miss_default = str(existing.get("Typical Miss", "unknown") or "unknown").lower()
+        if miss_default not in TYPICAL_MISSES:
+            TYPICAL_MISSES.append(miss_default)
+        typical_miss = st.selectbox(
+            "Typical miss", TYPICAL_MISSES, index=TYPICAL_MISSES.index(miss_default),
+            key=f"{prefix}_miss",
+        )
+        confidence_default = existing.get("Confidence", "Developing")
+        if confidence_default not in CONFIDENCE_LEVELS:
+            confidence_default = "Developing"
+        confidence = st.selectbox(
+            "Confidence", CONFIDENCE_LEVELS,
+            index=CONFIDENCE_LEVELS.index(confidence_default), key=f"{prefix}_confidence",
+        )
+
+    return build_club_record(
+        category, club_name, brand, model, loft, carry,
+        typical_miss, shot_shape, confidence,
+    )
 
 
 # ============================================================
@@ -1337,53 +1888,58 @@ def load_json(filename, default_value):
 
     try:
         if filename == PROFILE_FILE:
-            response = (
-                supabase
-                .table("profiles")
-                .select(
-                    "handedness,handicap,default_course,default_state"
+            try:
+                response = (
+                    supabase.table("profiles")
+                    .select(
+                        "display_name,handedness,handicap,typical_score,"
+                        "experience_level,preferred_scoring_leave,"
+                        "default_course,default_state"
+                    )
+                    .eq("user_id", user_id).limit(1).execute()
                 )
-                .eq(
-                    "user_id",
-                    user_id
+                st.session_state["my_player_schema_ready"] = True
+            except Exception:
+                st.session_state["my_player_schema_ready"] = False
+                response = (
+                    supabase.table("profiles")
+                    .select("handedness,handicap,default_course,default_state")
+                    .eq("user_id", user_id).limit(1).execute()
                 )
-                .limit(1)
-                .execute()
-            )
 
             if response.data:
                 row = response.data[0]
                 return {
+                    "display_name": row.get("display_name") or "",
                     "handedness": row.get("handedness") or "Right-handed",
                     "handicap": row.get("handicap") or "",
+                    "typical_score": row.get("typical_score") or "",
+                    "experience_level": row.get("experience_level") or "Developing",
+                    "preferred_scoring_leave": int(
+                        row.get("preferred_scoring_leave") or 100
+                    ),
                     "default_course": row.get("default_course") or "",
                     "default_state": row.get("default_state") or "NJ"
                 }
 
-            return {
-                "handedness": "Right-handed",
-                "handicap": "",
-                "default_course": "",
-                "default_state": "NJ"
-            }
+            return dict(DEFAULT_PROFILE)
 
         if filename == BAG_FILE:
-            response = (
-                supabase
-                .table("golf_bag")
-                .select(
-                    "club_name,brand,model,loft,stock_carry,stock_miss,active"
+            try:
+                response = (
+                    supabase.table("golf_bag")
+                    .select(
+                        "club_name,club_category,canonical_club_id,brand,model,"
+                        "loft,stock_carry,stock_miss,shot_shape,confidence,active"
+                    )
+                    .eq("user_id", user_id).eq("active", True).execute()
                 )
-                .eq(
-                    "user_id",
-                    user_id
+            except Exception:
+                response = (
+                    supabase.table("golf_bag")
+                    .select("club_name,brand,model,loft,stock_carry,stock_miss,active")
+                    .eq("user_id", user_id).eq("active", True).execute()
                 )
-                .eq(
-                    "active",
-                    True
-                )
-                .execute()
-            )
 
             rows = []
 
@@ -1404,6 +1960,14 @@ def load_json(filename, default_value):
 
                 rows.append({
                     "Club": row.get("club_name", ""),
+                    "Category": row.get("club_category") or infer_club_category(
+                        row.get("club_name", "")
+                    ),
+                    "Canonical ID": row.get("canonical_club_id") or canonical_club_id(
+                        row.get("club_name", "")
+                    ),
+                    "Brand": str(row.get("brand") or "").strip(),
+                    "Model": str(row.get("model") or "").strip(),
                     "Brand / Model": brand_model,
                     "Loft": (
                         f"{float(loft):g}°"
@@ -1413,7 +1977,9 @@ def load_json(filename, default_value):
                     "Stock Carry": float(
                         row.get("stock_carry") or 0
                     ),
-                    "Typical Miss": row.get("stock_miss") or "unknown"
+                    "Typical Miss": row.get("stock_miss") or "unknown",
+                    "Shot Shape": row.get("shot_shape") or "Unknown",
+                    "Confidence": row.get("confidence") or "Developing",
                 })
 
             # Critical multi-user isolation:
@@ -1445,37 +2011,31 @@ def save_json(filename, data):
 
     try:
         if filename == PROFILE_FILE:
-            (
-                supabase
-                .table("profiles")
-                .update({
-                    "handedness": data.get(
-                        "handedness",
-                        "Right-handed"
-                    ),
-                    "handicap": str(
-                        data.get(
-                            "handicap",
-                            ""
-                        )
-                    ),
-                    "default_course": data.get(
-                        "default_course",
-                        ""
-                    ),
-                    "default_state": str(
-                        data.get(
-                            "default_state",
-                            "NJ"
-                        )
-                    ).upper()
-                })
-                .eq(
-                    "user_id",
-                    user_id
+            legacy_payload = {
+                "handedness": data.get("handedness", "Right-handed"),
+                "handicap": str(data.get("handicap", "")),
+                "default_course": data.get("default_course", ""),
+                "default_state": str(data.get("default_state", "NJ")).upper(),
+            }
+            expanded_payload = {
+                **legacy_payload,
+                "display_name": data.get("display_name", ""),
+                "typical_score": str(data.get("typical_score", "")),
+                "experience_level": data.get("experience_level", "Developing"),
+                "preferred_scoring_leave": int(
+                    data.get("preferred_scoring_leave", 100) or 100
+                ),
+            }
+            try:
+                (
+                    supabase.table("profiles").update(expanded_payload)
+                    .eq("user_id", user_id).execute()
                 )
-                .execute()
-            )
+            except Exception:
+                (
+                    supabase.table("profiles").update(legacy_payload)
+                    .eq("user_id", user_id).execute()
+                )
 
             local_save_json(
                 filename,
@@ -1496,6 +2056,7 @@ def save_json(filename, data):
             )
 
             rows = []
+            legacy_rows = []
 
             for club in data:
                 club_name = str(
@@ -1525,16 +2086,12 @@ def save_json(filename, data):
                 except Exception:
                     loft_value = None
 
-                rows.append({
+                brand, model = split_brand_model(club)
+                legacy_row = {
                     "user_id": user_id,
                     "club_name": club_name,
-                    "brand": str(
-                        club.get(
-                            "Brand / Model",
-                            ""
-                        )
-                    ),
-                    "model": None,
+                    "brand": brand,
+                    "model": model or None,
                     "loft": loft_value,
                     "stock_carry": float(
                         club.get(
@@ -1549,15 +2106,22 @@ def save_json(filename, data):
                         )
                     ),
                     "active": True
+                }
+                legacy_rows.append(legacy_row)
+                rows.append({
+                    **legacy_row,
+                    "club_category": club.get("Category") or infer_club_category(club_name),
+                    "canonical_club_id": club.get("Canonical ID") or canonical_club_id(club_name),
+                    "shot_shape": club.get("Shot Shape", "Unknown"),
+                    "confidence": club.get("Confidence", "Developing"),
                 })
 
             if rows:
-                (
-                    supabase
-                    .table("golf_bag")
-                    .insert(rows)
-                    .execute()
-                )
+                try:
+                    supabase.table("golf_bag").insert(rows).execute()
+                except Exception:
+                    supabase.table("golf_bag").delete().eq("user_id", user_id).execute()
+                    supabase.table("golf_bag").insert(legacy_rows).execute()
 
             local_save_json(
                 filename,
@@ -1575,6 +2139,41 @@ def save_json(filename, data):
         filename,
         data
     )
+
+
+def load_game_profile():
+    if not _cloud_ready():
+        return local_load_json(GAME_PROFILE_FILE, DEFAULT_GAME_PROFILE)
+    try:
+        response = (
+            supabase.table("player_game_profiles").select("game_data")
+            .eq("user_id", _cloud_user_id()).limit(1).execute()
+        )
+        if response.data:
+            saved = response.data[0].get("game_data") or {}
+            return {**DEFAULT_GAME_PROFILE, **saved}
+    except Exception:
+        return dict(DEFAULT_GAME_PROFILE)
+    return dict(DEFAULT_GAME_PROFILE)
+
+
+def save_game_profile(game_data):
+    cleaned = {**DEFAULT_GAME_PROFILE, **(game_data or {})}
+    if not _cloud_ready():
+        local_save_json(GAME_PROFILE_FILE, cleaned)
+        return True
+    try:
+        supabase.table("player_game_profiles").upsert(
+            {
+                "user_id": _cloud_user_id(),
+                "game_data": cleaned,
+                "updated_at": datetime.now().isoformat(),
+            },
+            on_conflict="user_id",
+        ).execute()
+        return True
+    except Exception:
+        return False
 
 def _evidence_to_shot_dataframe(rows):
     return pd.DataFrame(
@@ -1740,7 +2339,9 @@ def load_player_evidence():
                 "source",
                 [
                     "Simulator",
+                    "Launch Monitor",
                     "Driving Range",
+                    "Previous Round",
                     "Manual"
                 ]
             )
@@ -2204,6 +2805,7 @@ SOURCE_WEIGHTS = {
     "On Course": 0.95,
     "Previous Round": 0.90,
     "Driving Range": 0.75,
+    "Launch Monitor": 0.72,
     "Simulator": 0.70,
     "Manual": 0.60
 }
@@ -2253,6 +2855,61 @@ def local_append_player_evidence(rows):
         PLAYER_EVIDENCE_FILE,
         index=False
     )
+
+
+def preserve_raw_import(df, file_name, source_label):
+    """Preserve every uploaded column before My Play normalizes known metrics."""
+    if df is None or df.empty:
+        return False, "The uploaded file did not contain any rows."
+
+    safe_df = df.copy()
+    safe_df.columns = [str(column) for column in safe_df.columns]
+    safe_df = safe_df.astype(object).where(pd.notna(safe_df), None)
+    raw_rows = safe_df.to_dict(orient="records")
+    raw_columns = list(safe_df.columns)
+    payload_text = json.dumps(raw_rows, default=str, sort_keys=True)
+    raw_rows = json.loads(payload_text)
+    import_hash = hashlib.sha256(payload_text.encode("utf-8")).hexdigest()
+    payload = {
+        "user_id": _cloud_user_id() if _cloud_ready() else None,
+        "file_name": str(file_name or "uploaded_data"),
+        "source": str(source_label or "Imported"),
+        "import_hash": import_hash,
+        "row_count": len(raw_rows),
+        "raw_columns": raw_columns,
+        "raw_rows": raw_rows,
+        "uploaded_at": datetime.now().isoformat(),
+    }
+
+    os.makedirs(RAW_IMPORT_DIR, exist_ok=True)
+    local_path = os.path.join(RAW_IMPORT_DIR, f"{import_hash}.json")
+    if os.path.exists(local_path):
+        return False, "This exact file has already been imported."
+
+    cloud_saved = False
+    if _cloud_ready():
+        try:
+            existing = (
+                supabase.table("data_imports").select("id")
+                .eq("user_id", _cloud_user_id())
+                .eq("import_hash", import_hash).limit(1).execute()
+            )
+            if existing.data:
+                return False, "This exact file has already been imported."
+            supabase.table("data_imports").insert(payload).execute()
+            cloud_saved = True
+        except Exception:
+            cloud_saved = False
+
+    with open(local_path, "w", encoding="utf-8") as raw_file:
+        json.dump(payload, raw_file, ensure_ascii=False, indent=2, default=str)
+
+    if _cloud_ready() and not cloud_saved:
+        return True, (
+            "Every original column was preserved locally. Complete the My Player "
+            "database upgrade to preserve raw imports in the golfer's cloud account too."
+        )
+    return True, "Every original column and value was preserved before mapping."
 
 def shot_history_as_evidence(
     shots
@@ -2320,6 +2977,10 @@ def shot_history_as_evidence(
                 "Round ID",
                 ""
             ),
+            "Shot Type": row.get(
+                "Shot Type",
+                ""
+            ),
             "Notes": row.get(
                 "Note",
                 ""
@@ -2368,6 +3029,7 @@ def combined_player_evidence(
         "Course",
         "Hole",
         "Round ID",
+        "Shot Type",
         "Notes",
         "Date"
     ]:
@@ -2386,6 +3048,241 @@ def combined_player_evidence(
     )
 
     return combined
+
+
+def player_snapshot(round_history, evidence):
+    scores = pd.Series(dtype="float64")
+    if isinstance(round_history, pd.DataFrame) and not round_history.empty:
+        score_column = "Total Score" if "Total Score" in round_history.columns else None
+        if score_column:
+            scores = pd.to_numeric(round_history[score_column], errors="coerce")
+            scores = scores[(scores > 0) & (scores < 200)].dropna()
+
+    shot_count = len(evidence) if isinstance(evidence, pd.DataFrame) else 0
+    round_count = int(len(scores))
+    confidence = "Building"
+    if round_count >= 8 and shot_count >= 150:
+        confidence = "Established"
+    elif round_count >= 3 or shot_count >= 50:
+        confidence = "Developing"
+
+    return {
+        "rounds": round_count,
+        "average_score": float(scores.mean()) if not scores.empty else None,
+        "recent_average": float(scores.head(5).mean()) if not scores.empty else None,
+        "best_score": int(scores.min()) if not scores.empty else None,
+        "shots": int(shot_count),
+        "confidence": confidence,
+    }
+
+
+def normalized_miss_label(value):
+    text = str(value or "").strip().lower()
+    if not text or text in {"nan", "none", "unknown", "on target", "good"}:
+        return ""
+    if any(token in text for token in ["left", "pull", "hook", "draw"]):
+        return "Left"
+    if any(token in text for token in ["right", "push", "slice", "fade"]):
+        return "Right"
+    if "short" in text:
+        return "Short"
+    if "long" in text:
+        return "Long"
+    if any(token in text for token in ["thin", "fat", "heavy", "top", "poor", "mishit"]):
+        return "Contact"
+    return str(value).strip()
+
+
+def learned_profile_insights(evidence):
+    result = {
+        "primary_tendency": "More shot results needed",
+        "primary_count": 0,
+        "reliable_club": "More club data needed",
+        "reliable_club_count": 0,
+        "data_note": "My Play will replace setup assumptions with learned patterns as evidence grows.",
+    }
+    if not isinstance(evidence, pd.DataFrame) or evidence.empty:
+        return result
+
+    work = evidence.copy()
+    if "Result" in work.columns:
+        misses = work["Result"].map(normalized_miss_label)
+        misses = misses[misses.astype(str).str.strip() != ""]
+        if not misses.empty:
+            counts = misses.value_counts()
+            result["primary_tendency"] = f"{counts.index[0]} is the most common recorded miss"
+            result["primary_count"] = int(counts.iloc[0])
+
+    if {"Club", "Carry"}.issubset(work.columns):
+        work["Carry"] = pd.to_numeric(work["Carry"], errors="coerce")
+        club_groups = work.dropna(subset=["Carry"]).groupby("Club")["Carry"].agg(["count", "std"])
+        club_groups = club_groups[club_groups["count"] >= 3]
+        if not club_groups.empty:
+            club_groups["std"] = club_groups["std"].fillna(999)
+            club_groups = club_groups.sort_values(["std", "count"], ascending=[True, False])
+            result["reliable_club"] = str(club_groups.index[0])
+            result["reliable_club_count"] = int(club_groups.iloc[0]["count"])
+    return result
+
+
+def endurance_phase_table(evidence):
+    columns = [
+        "Session phase", "Comparable shots", "Carry change",
+        "Carry dispersion", "Solid contact", "Emerging tendency"
+    ]
+    if not isinstance(evidence, pd.DataFrame) or evidence.empty:
+        return pd.DataFrame(columns=columns)
+
+    required = {"Round ID", "Club", "Carry"}
+    if not required.issubset(evidence.columns):
+        return pd.DataFrame(columns=columns)
+
+    work = evidence.copy()
+    work["Round ID"] = work["Round ID"].fillna("").astype(str).str.strip()
+    work = work[~work["Round ID"].isin(["", "nan", "None"])]
+    work["Carry"] = pd.to_numeric(work["Carry"], errors="coerce")
+    work = work.dropna(subset=["Carry"])
+    if work.empty:
+        return pd.DataFrame(columns=columns)
+
+    work["Shot Sequence"] = work.groupby("Round ID").cumcount() + 1
+    club_baselines = work.groupby("Club")["Carry"].median()
+    work["Carry Delta"] = work.apply(
+        lambda row: row["Carry"] - club_baselines.get(row["Club"], row["Carry"]), axis=1
+    )
+    phase_order = ["Opening · 1–20", "Middle · 21–40", "Late · 41–60", "Extended · 61+"]
+    work["Session phase"] = pd.cut(
+        work["Shot Sequence"], bins=[0, 20, 40, 60, float("inf")], labels=phase_order
+    )
+
+    rows = []
+    for phase in phase_order:
+        group = work[work["Session phase"].astype(str) == phase]
+        if group.empty:
+            continue
+        misses = group.get("Result", pd.Series(dtype="object")).map(normalized_miss_label)
+        misses = misses[misses.astype(str).str.strip() != ""]
+        tendency = "No clear tendency"
+        if not misses.empty:
+            tendency = str(misses.value_counts().index[0])
+        contact = group.get("Contact", pd.Series(dtype="object")).astype(str).str.lower()
+        solid_rate = float(contact.str.contains("solid").mean() * 100) if len(contact) else None
+        carry_delta = float(group["Carry Delta"].mean())
+        dispersion = float(group["Carry Delta"].std()) if len(group) > 1 else None
+        rows.append({
+            "Session phase": phase,
+            "Comparable shots": int(len(group)),
+            "Carry change": f"{carry_delta:+.1f} yd",
+            "Carry dispersion": f"{dispersion:.1f} yd" if dispersion is not None else "Need data",
+            "Solid contact": f"{solid_rate:.0f}%" if solid_rate is not None else "Need data",
+            "Emerging tendency": tendency,
+        })
+    return pd.DataFrame(rows, columns=columns)
+
+
+def recommended_training(insights, endurance_table, evidence):
+    recommendation = {
+        "title": "Build a trustworthy baseline",
+        "summary": "Record a focused 20-shot session with one mid-iron so My Play can measure carry and dispersion.",
+        "time": "20 minutes",
+        "location": "Driving range",
+        "clubs": "One mid-iron",
+        "steps": [
+            "Hit 5 comfortable warm-up shots.",
+            "Hit 10 shots to the same target and record every result.",
+            "Finish with 5 shots using your normal on-course routine.",
+        ],
+        "reason": "More comparable evidence is needed before prescribing a narrower weakness.",
+        "source_label": "My Play Original",
+        "source_url": "",
+    }
+
+    if isinstance(endurance_table, pd.DataFrame) and not endurance_table.empty:
+        late = endurance_table[endurance_table["Session phase"].str.contains("Late|Extended", regex=True)]
+        if not late.empty and int(late["Comparable shots"].sum()) >= 8:
+            recommendation.update({
+                "title": "Late-round target-window training",
+                "summary": "Recreate the point where your pattern changes and protect accuracy under accumulated swings.",
+                "time": "25 minutes",
+                "location": "Driving range",
+                "clubs": "7 Iron and Driver",
+                "steps": [
+                    "Warm up normally, then hit 20 mixed shots.",
+                    "Hit 10 seven-irons through a defined target window.",
+                    "Finish with 5 driver and 5 seven-iron shots using a full pre-shot routine.",
+                    "Save the complete session so My Play can compare early and late performance.",
+                ],
+                "reason": "Your stored rounds contain enough late-session shots to begin testing endurance.",
+            })
+            return recommendation
+
+    tendency = str(insights.get("primary_tendency", ""))
+    if any(direction in tendency for direction in ["Left", "Right"]):
+        recommendation.update({
+            "title": "Alignment and start-line checkpoint",
+            "summary": "Use a defined target line to separate setup errors from the miss pattern My Play recorded.",
+            "time": "15 minutes",
+            "location": "Driving range",
+            "clubs": "7 Iron",
+            "steps": [
+                "Place one alignment aid on the target line and one parallel to your feet.",
+                "Hit 5 half-swings, then 10 normal shots to the same target.",
+                "Record the starting direction and final miss for every shot.",
+            ],
+            "reason": tendency + ".",
+            "source_label": "Adapted from a PGA professional strategy",
+            "source_url": "https://www.pga.com/story/get-your-golf-game-ready-4-easy-drills-for-a-better-start-to-the-season",
+        })
+    return recommendation
+
+
+def build_round_biography(round_row, evidence, all_rounds):
+    row = round_row.to_dict() if hasattr(round_row, "to_dict") else dict(round_row or {})
+    round_id = str(row.get("Round ID", "") or "").strip()
+    course = str(row.get("Course", "") or "Unknown course")
+    score = pd.to_numeric(pd.Series([row.get("Total Score")]), errors="coerce").iloc[0]
+    round_shots = pd.DataFrame()
+    if isinstance(evidence, pd.DataFrame) and not evidence.empty and "Round ID" in evidence.columns and round_id:
+        round_shots = evidence[evidence["Round ID"].fillna("").astype(str) == round_id].copy()
+
+    scores = pd.Series(dtype="float64")
+    if isinstance(all_rounds, pd.DataFrame) and "Total Score" in all_rounds.columns:
+        scores = pd.to_numeric(all_rounds["Total Score"], errors="coerce")
+        scores = scores[(scores > 0) & (scores < 200)].dropna()
+    comparison = ""
+    if pd.notna(score) and len(scores) >= 2:
+        baseline = float(scores.mean())
+        difference = float(score - baseline)
+        if abs(difference) < 0.6:
+            comparison = "right around your recorded scoring average"
+        elif difference < 0:
+            comparison = f"{abs(difference):.1f} strokes better than your recorded average"
+        else:
+            comparison = f"{difference:.1f} strokes above your recorded average"
+
+    opening = f"At {course}, you posted {int(score) if pd.notna(score) else 'a recorded round'}"
+    if comparison:
+        opening += f"—{comparison}."
+    else:
+        opening += "."
+
+    details = []
+    if not round_shots.empty:
+        details.append(f"My Play registered {len(round_shots)} shots connected to this round.")
+        misses = round_shots.get("Result", pd.Series(dtype="object")).map(normalized_miss_label)
+        misses = misses[misses.astype(str).str.strip() != ""]
+        if not misses.empty:
+            details.append(f"The most frequent recorded outcome was {str(misses.value_counts().index[0]).lower()}.")
+    else:
+        details.append("Detailed shot-by-shot conclusions will appear when shots are saved to this round.")
+
+    return {
+        "title": f"{course} · {int(score) if pd.notna(score) else 'Round'}",
+        "story": " ".join([opening] + details),
+        "shots": int(len(round_shots)),
+        "course": course,
+        "score": int(score) if pd.notna(score) else None,
+    }
 
 def evidence_weight(
     source,
@@ -2884,6 +3781,19 @@ def unified_context_summary(
         notes.append(
             f"Weighted miss tendency: {profile['dominant_miss']}."
         )
+
+    category = infer_club_category(club_name)
+    tendency_key = {
+        "Driver": "driver_miss",
+        "Fairway Wood": "wood_miss",
+        "Hybrid / Rescue": "wood_miss",
+        "Utility / Driving Iron": "iron_miss",
+        "Iron": "iron_miss",
+        "Wedge": "wedge_miss",
+    }.get(category)
+    saved_miss = game_profile.get(tendency_key, "unknown") if tendency_key else "unknown"
+    if saved_miss not in ("", "unknown", None):
+        notes.append(f"Saved {category.lower()} tendency: {saved_miss}.")
 
     if hole_memory and hole_memory.get(
         "common_result"
@@ -6926,7 +7836,10 @@ bag = load_json(
     DEFAULT_BAG
 )
 
+game_profile = load_game_profile()
+
 shots = load_shots()
+all_player_evidence = combined_player_evidence(shots)
 
 cached_course = load_cached_course()
 
@@ -6970,8 +7883,17 @@ header_left, header_right = st.columns(
 )
 
 with header_left:
-    st.title(
-        "⛳ My Play"
+    st.markdown(
+        """
+        <div class="myplay-brandbar">
+            <div class="myplay-brandmark" aria-label="My Play emblem">MP</div>
+            <div class="myplay-brandcopy">
+                <h1>My Play</h1>
+                <p>Your game. Your data. Your caddie.</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 with header_right:
@@ -13384,6 +14306,9 @@ def import_club_evidence_dataframe(
         [
             "club",
             "club name",
+            "club type",
+            "selected club",
+            "equipment",
         ]
     )
 
@@ -13392,6 +14317,11 @@ def import_club_evidence_dataframe(
             "carry",
             "carry distance",
             "carry yards",
+            "carry distance yards",
+            "carry yd",
+            "carry yds",
+            "carry (yds)",
+            "carry (yards)",
             "distance",
         ]
     )
@@ -13406,6 +14336,8 @@ def import_club_evidence_dataframe(
             [
                 "total distance",
                 "total",
+                "total yards",
+                "total (yds)",
             ]
         ),
         "offline": find_column(
@@ -13413,35 +14345,47 @@ def import_club_evidence_dataframe(
                 "offline",
                 "lateral",
                 "side",
+                "side distance",
+                "distance offline",
+                "offline (yds)",
             ]
         ),
         "ball_speed": find_column(
             [
                 "ball speed",
+                "ball speed mph",
+                "ball velocity",
             ]
         ),
         "club_speed": find_column(
             [
                 "club speed",
                 "swing speed",
+                "club head speed",
+                "clubhead speed",
             ]
         ),
         "launch_angle": find_column(
             [
                 "launch angle",
                 "launch",
+                "vertical launch",
             ]
         ),
         "spin_rate": find_column(
             [
                 "spin rate",
                 "spin",
+                "back spin",
+                "backspin",
+                "rpm",
             ]
         ),
         "apex": find_column(
             [
                 "apex",
                 "peak height",
+                "max height",
             ]
         ),
         "contact": find_column(
@@ -15256,124 +16200,69 @@ if not bag:
         "You can add the rest of the bag immediately afterward in My Bag."
     )
 
-    with st.form(
-        "new_golfer_first_club_form"
-    ):
-        first_club_name = st.selectbox(
-            "First Club",
-            [
-                "Driver",
-                "3 Wood",
-                "5 Wood",
-                "7 Wood",
-                "2 Hybrid",
-                "3 Hybrid",
-                "4 Hybrid",
-                "4 Iron",
-                "5 Iron",
-                "6 Iron",
-                "7 Iron",
-                "8 Iron",
-                "9 Iron",
-                "Pitching Wedge",
-                "48° Wedge",
-                "50° Wedge",
-                "52° Wedge",
-                "54° Wedge",
-                "56° Wedge",
-                "58° Wedge",
-                "60° Wedge",
-                "Other"
-            ]
+    first_category = st.selectbox(
+        "1. Club category",
+        list(CLUB_CATALOG.keys()),
+        key="onboarding_club_category",
+    )
+    first_club_name = st.selectbox(
+        "2. Exact club",
+        CLUB_CATALOG[first_category],
+        key="onboarding_club_name",
+    )
+    first_brand = st.selectbox(
+        "3. Brand",
+        CLUB_BRANDS,
+        index=CLUB_BRANDS.index("Callaway"),
+        key="onboarding_club_brand",
+    )
+    first_model_choices = model_choices_for(first_brand, first_category)
+    first_model = st.selectbox(
+        "4. Model",
+        first_model_choices,
+        index=first_model_choices.index("Model unknown"),
+        key="onboarding_club_model_choice",
+    )
+    if first_model == "Other / Model not listed":
+        first_model = st.text_input(
+            "Enter model",
+            placeholder="Type the model only when it is not listed",
+            key="onboarding_club_custom_model",
+        ).strip()
+    detail_col1, detail_col2 = st.columns(2)
+    with detail_col1:
+        first_loft = st.number_input(
+            "Loft (optional)", min_value=0.0, max_value=80.0,
+            value=None, step=0.5, key="onboarding_club_loft",
         )
-
-        custom_club_name = ""
-
-        if first_club_name == "Other":
-            custom_club_name = st.text_input(
-                "Club Name"
-            )
-
-        first_brand_model = st.text_input(
-            "Brand / Model",
-            placeholder="Example: Callaway Paradym"
-        )
-
-        first_loft = st.text_input(
-            "Loft (optional)",
-            placeholder="Example: 10 or 10.5"
-        )
-
         first_carry = st.number_input(
-            "Normal Carry (yards)",
-            min_value=1,
-            max_value=400,
-            value=200,
-            step=1
+            "Normal carry (yards)", min_value=1, max_value=400,
+            value=200, step=1, key="onboarding_club_carry",
         )
-
+    with detail_col2:
         first_miss = st.selectbox(
-            "Typical Miss",
-            [
-                "unknown",
-                "straight",
-                "slight pull",
-                "pull",
-                "slight fade",
-                "fade right",
-                "push",
-                "hook",
-                "slice",
-                "short",
-                "long"
-            ]
+            "Typical miss", TYPICAL_MISSES, key="onboarding_club_miss"
         )
-
-        save_first_club = st.form_submit_button(
-            "Add First Club",
-            type="primary",
-            use_container_width=True
+        first_confidence = st.selectbox(
+            "Confidence", CONFIDENCE_LEVELS, index=1,
+            key="onboarding_club_confidence",
         )
+    first_shape = st.selectbox(
+        "Normal shot shape", SHOT_SHAPES, key="onboarding_club_shape"
+    )
+    save_first_club = st.button(
+        "Add First Club", type="primary", use_container_width=True,
+        key="onboarding_save_first_club",
+    )
 
     if save_first_club:
-        club_name = (
-            custom_club_name.strip()
-            if first_club_name == "Other"
-            else first_club_name
+        first_club = build_club_record(
+            first_category, first_club_name, first_brand, first_model.strip(),
+            first_loft, first_carry, first_miss, first_shape, first_confidence,
         )
-
-        if not club_name:
-            st.warning(
-                "Enter a club name."
-            )
-        else:
-            first_club = {
-                "Club": club_name,
-                "Brand / Model": first_brand_model.strip(),
-                "Loft": (
-                    f"{first_loft.strip()}°"
-                    if first_loft.strip()
-                    and not first_loft.strip().endswith("°")
-                    else first_loft.strip()
-                ),
-                "Stock Carry": int(
-                    first_carry
-                ),
-                "Typical Miss": first_miss
-            }
-
-            save_json(
-                BAG_FILE,
-                [
-                    first_club
-                ]
-            )
-
-            st.success(
-                f"{club_name} added to your My Play account."
-            )
-
-            st.rerun()
+        save_json(BAG_FILE, [first_club])
+        st.success(f"{first_club_name} added to your My Play account.")
+        st.rerun()
 
     st.info(
         "Once your first club is saved, the full My Play tabs will unlock."
@@ -15382,17 +16271,131 @@ if not bag:
     st.stop()
 
 
-tab_round, tab_voice_command, tab_bag, tab_club_analytics, tab_swing_video, tab_history, tab_game = st.tabs(
-    [
-        "⛳ Live",
-        "🗣️ Caddie",
-        "🎒 Bag",
-        "📈 Clubs",
-        "🎥 Swing",
-        "📊 Stats",
-        "🧠 My Game"
-    ]
+tab_round, tab_voice_command, tab_player = st.tabs(
+    ["Live Round", "Caddie", "My Player"]
 )
+
+with tab_player:
+    (
+        tab_player_home,
+        tab_bag,
+        tab_game,
+        tab_club_analytics,
+        tab_history,
+        tab_swing_video,
+        tab_data,
+    ) = st.tabs(
+        [
+            "Profile", "My Bag", "Preferences", "Club Analytics",
+            "Round Biographies", "Swing Video", "Data Uploads",
+        ]
+    )
+
+with tab_player_home:
+    player_name = str(profile.get("display_name", "") or "").strip() or "Golfer"
+    safe_player_name = html.escape(player_name)
+    player_rounds = load_round_history()
+    snapshot = player_snapshot(player_rounds, all_player_evidence)
+    learned_insights = learned_profile_insights(all_player_evidence)
+    endurance_summary = endurance_phase_table(all_player_evidence)
+    training_plan = recommended_training(
+        learned_insights, endurance_summary, all_player_evidence
+    )
+    hand_label = html.escape(str(profile.get("handedness", "Right-handed")))
+    experience_label = html.escape(str(profile.get("experience_level", "Developing")))
+    st.markdown(
+        f"""
+        <div class="myplay-profile-banner">
+            <div class="myplay-eyebrow">MY PLAYER</div>
+            <h2>{safe_player_name}</h2>
+            <p>{hand_label} · {experience_label} golfer · Profile confidence: {snapshot['confidence']}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
+    with overview_col1:
+        st.metric("Rounds", snapshot["rounds"])
+    with overview_col2:
+        st.metric(
+            "Average score",
+            f"{snapshot['average_score']:.1f}" if snapshot["average_score"] is not None else "Need rounds",
+        )
+    with overview_col3:
+        st.metric(
+            "Best score",
+            snapshot["best_score"] if snapshot["best_score"] is not None else "Need rounds",
+        )
+    with overview_col4:
+        st.metric("Shots learned", snapshot["shots"])
+
+    with st.expander("Your game right now", expanded=True):
+        st.markdown(
+            f"""
+            <div class="myplay-insight"><strong>Primary learned tendency</strong><span>{html.escape(learned_insights['primary_tendency'])} · {learned_insights['primary_count']} supporting shots</span></div>
+            <div class="myplay-insight"><strong>Most repeatable recorded club</strong><span>{html.escape(learned_insights['reliable_club'])} · {learned_insights['reliable_club_count']} comparable shots</span></div>
+            <div class="myplay-insight"><strong>Preferred scoring leave</strong><span>{int(profile.get('preferred_scoring_leave', 100) or 100)} yards · used by the caddie for layup decisions</span></div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with st.expander(
+        f"Recommended Training · {training_plan['title']} · {training_plan['time']}",
+        expanded=True,
+    ):
+        st.write(training_plan["summary"])
+        t1, t2, t3 = st.columns(3)
+        t1.metric("Time", training_plan["time"])
+        t2.metric("Location", training_plan["location"])
+        t3.metric("Clubs", training_plan["clubs"])
+        st.caption(f"Why My Play selected this: {training_plan['reason']}")
+        for step_number, step in enumerate(training_plan["steps"], start=1):
+            st.write(f"{step_number}. {step}")
+        if training_plan.get("source_url"):
+            st.markdown(
+                f"[{training_plan['source_label']}]({training_plan['source_url']})"
+            )
+        else:
+            st.caption(training_plan["source_label"])
+
+    with st.expander("Endurance pattern", expanded=False):
+        if endurance_summary.empty:
+            st.info(
+                "Finish rounds with shot data connected to the round. My Play will compare "
+                "shots 1–20, 21–40, 41–60 and 61+ without treating club choice as fatigue."
+            )
+        else:
+            st.dataframe(endurance_summary, use_container_width=True, hide_index=True)
+            st.caption(
+                "Observed performance pattern only—not a medical or physical diagnosis."
+            )
+
+    with st.expander("Recent Round Biographies", expanded=False):
+        if player_rounds.empty:
+            st.info("Complete a round to create your first Round Biography.")
+        else:
+            for _, biography_round in player_rounds.head(3).iterrows():
+                biography = build_round_biography(
+                    biography_round, all_player_evidence, player_rounds
+                )
+                st.markdown(f"**{biography['title']}**")
+                st.write(biography["story"])
+                st.divider()
+
+    with st.expander("Bag snapshot", expanded=False):
+        bag_col1, bag_col2, bag_col3 = st.columns(3)
+        bag_col1.metric("Clubs", len(bag))
+        bag_col2.metric("Evidence", snapshot["shots"])
+        bag_col3.metric("Profile confidence", snapshot["confidence"])
+        st.caption("Open My Bag to add or edit a club. Open Club Analytics for detailed numbers.")
+
+    with st.expander("Ask My Caddie", expanded=False):
+        st.write(
+            f"Welcome back, {player_name}. Ask about your latest pattern, a club, "
+            "a completed round, or why My Play selected your recommended training."
+        )
+        st.caption("The full conversational caddie is available from the main Caddie tab.")
 
 
 
@@ -16065,15 +17068,22 @@ def choose_preferred_scoring_leave(
     )
 
     if not options:
+        preferred_yards = int(
+            profile.get("preferred_scoring_leave", 100) or 100
+        )
         return {
             "club": "Scoring Wedge",
-            "carry": 100,
+            "carry": preferred_yards,
             "dispersion": {}
         }
 
-    return max(
+    preferred_yards = int(profile.get("preferred_scoring_leave", 100) or 100)
+    return min(
         options,
-        key=scoring_leave_quality
+        key=lambda option: (
+            abs(float(option.get("carry", preferred_yards)) - preferred_yards),
+            -scoring_leave_quality(option),
+        ),
     )
 
 def plan_candidate_risk(
@@ -21539,7 +22549,10 @@ with tab_round:
 
             st.session_state[
                 "round_exit_message"
-            ] = "Round saved to history."
+            ] = (
+                "Round saved. My Play registered the complete round and built your "
+                "Round Biography in My Player → Round Biographies."
+            )
 
             st.rerun()
 
@@ -21992,10 +23005,8 @@ with tab_bag:
         "Hint: Keep your stock carries and typical misses current. My Play combines these with learned shot data."
     )
 
-    with st.expander(
-        "🎙️ Manage Bag by Voice",
-        expanded=False
-    ):
+    # Voice bag management was intentionally removed from this screen.
+    if False:
         st.caption(
             "Speak a bag change, review it, then confirm before My Play saves anything."
         )
@@ -22153,63 +23164,142 @@ with tab_bag:
                         st.rerun()
 
 
-    bag_df = pd.DataFrame(
-        bag
-    )
+    bag_mode = st.session_state.get("bag_manage_mode", "view")
 
-    edited_bag = st.data_editor(
-        bag_df,
-        use_container_width=True,
-        hide_index=True,
-        num_rows="dynamic",
-        column_config={
-            "Stock Carry": st.column_config.NumberColumn(
-                "Stock Carry",
-                min_value=1,
-                max_value=400,
-                step=1
+    if bag_mode == "view":
+        heading_col, add_col = st.columns([3, 1])
+        with heading_col:
+            st.subheader(f"{len(bag)} clubs")
+            st.caption("Select any club card to view or edit its details.")
+        with add_col:
+            if st.button(
+                "＋ Add Club", type="primary", use_container_width=True,
+                key="bag_add_mode",
+            ):
+                st.session_state["bag_manage_mode"] = "add"
+                st.session_state.pop("bag_delete_pending", None)
+                st.rerun()
+
+        for row_start in range(0, len(bag), 3):
+            card_columns = st.columns(3)
+            for offset, column in enumerate(card_columns):
+                bag_index = row_start + offset
+                if bag_index >= len(bag):
+                    continue
+                club = bag[bag_index]
+                club_name = str(club.get("Club", "Club") or "Club")
+                brand, model = split_brand_model(club)
+                brand_model = " • ".join(value for value in [brand, model] if value)
+                loft = str(club.get("Loft", "") or "Loft not set")
+                carry = round(float(club.get("Stock Carry", 0) or 0))
+                miss = str(club.get("Typical Miss", "unknown") or "unknown").title()
+                confidence = str(club.get("Confidence", "Developing") or "Developing")
+                card_label = (
+                    f"**{club_name}**\n\n"
+                    f"{brand_model or 'Brand/model not set'}\n\n"
+                    f"**{carry} yd** carry  •  {loft}\n\n"
+                    f"{miss}  •  {confidence}"
+                )
+                with column:
+                    with st.container(key=f"club_card_{bag_index}"):
+                        if st.button(
+                            card_label,
+                            use_container_width=True,
+                            key=f"open_club_{bag_index}",
+                        ):
+                            st.session_state["bag_edit_choice"] = club_name
+                            st.session_state["bag_manage_mode"] = "edit"
+                            st.session_state.pop("bag_delete_pending", None)
+                            st.rerun()
+
+    elif bag_mode == "add":
+        if st.button("← Back to My Bag", key="bag_add_back"):
+            st.session_state["bag_manage_mode"] = "view"
+            st.rerun()
+        st.header("Add a club")
+        st.caption("Choose one step at a time. My Play standardizes the club automatically.")
+        new_club = render_club_builder("bag_add")
+        save_col, cancel_col = st.columns(2)
+        with save_col:
+            if st.button("Save Club", type="primary", use_container_width=True, key="bag_add_save"):
+                if not new_club.get("Club"):
+                    st.warning("Enter the club name before saving.")
+                elif any(
+                    canonical_club_id(item.get("Club")) == new_club["Canonical ID"]
+                    for item in bag
+                ):
+                    st.warning("That club is already in your bag. Choose Edit Club instead.")
+                else:
+                    save_json(BAG_FILE, list(bag) + [new_club])
+                    st.session_state["bag_manage_mode"] = "view"
+                    st.success(f"{new_club['Club']} added.")
+                    st.rerun()
+        with cancel_col:
+            if st.button("Cancel", use_container_width=True, key="bag_add_cancel"):
+                st.session_state["bag_manage_mode"] = "view"
+                st.rerun()
+
+    elif bag_mode == "edit" and bag:
+        edit_names = [str(item.get("Club", "")) for item in bag]
+        edit_name = st.session_state.get("bag_edit_choice", edit_names[0])
+        if edit_name not in edit_names:
+            edit_name = edit_names[0]
+        edit_index = edit_names.index(edit_name)
+        if st.button("← Back to My Bag", key="bag_edit_back"):
+            st.session_state["bag_manage_mode"] = "view"
+            st.session_state.pop("bag_delete_pending", None)
+            st.rerun()
+        st.header(f"Edit {edit_name}")
+        st.caption("Update the club and save. Changes are used by analytics and the caddie.")
+        edit_club = render_club_builder(
+            f"bag_edit_{canonical_club_id(edit_name)}", bag[edit_index]
+        )
+        save_col, cancel_col, delete_col = st.columns([2, 1, 1])
+        with save_col:
+            if st.button("Save Changes", type="primary", use_container_width=True, key="bag_edit_save"):
+                updated_bag = list(bag)
+                updated_bag[edit_index] = edit_club
+                save_json(BAG_FILE, updated_bag)
+                st.session_state["bag_manage_mode"] = "view"
+                st.session_state.pop("bag_delete_pending", None)
+                st.success(f"{edit_club['Club']} updated.")
+                st.rerun()
+        with cancel_col:
+            if st.button("Cancel", use_container_width=True, key="bag_edit_cancel"):
+                st.session_state["bag_manage_mode"] = "view"
+                st.session_state.pop("bag_delete_pending", None)
+                st.rerun()
+        with delete_col:
+            if st.button("Delete Club", use_container_width=True, key="bag_edit_delete"):
+                st.session_state["bag_delete_pending"] = edit_name
+                st.rerun()
+
+        if st.session_state.get("bag_delete_pending") == edit_name:
+            st.warning(
+                f"Delete {edit_name} from My Bag? Recorded shot history will remain intact."
             )
-        }
-    )
+            confirm_col, keep_col = st.columns(2)
+            with confirm_col:
+                if st.button(
+                    "Yes, Delete Club", type="primary", use_container_width=True,
+                    key="bag_delete_confirm",
+                ):
+                    updated_bag = [
+                        item for item in bag
+                        if str(item.get("Club", "")) != edit_name
+                    ]
+                    save_json(BAG_FILE, updated_bag)
+                    st.session_state["bag_manage_mode"] = "view"
+                    st.session_state.pop("bag_delete_pending", None)
+                    st.rerun()
+            with keep_col:
+                if st.button(
+                    "Keep Club", use_container_width=True, key="bag_delete_cancel"
+                ):
+                    st.session_state.pop("bag_delete_pending", None)
+                    st.rerun()
 
-    if st.button(
-        "Save My Bag",
-        type="primary"
-    ):
-        cleaned = []
-
-        for record in edited_bag.to_dict(
-            orient="records"
-        ):
-            if str(
-                record.get(
-                    "Club",
-                    ""
-                )
-            ).strip():
-                record[
-                    "Stock Carry"
-                ] = float(
-                    record.get(
-                        "Stock Carry",
-                        0
-                    )
-                )
-                cleaned.append(
-                    record
-                )
-
-        save_json(
-            BAG_FILE,
-            cleaned
-        )
-
-        st.success(
-            "Bag saved."
-        )
-
-        st.rerun()
-
+if False:  # Retained legacy analytics block; replaced by the clean view below.
     st.divider()
     st.subheader(
         "Learned Club Distances"
@@ -22319,15 +23409,19 @@ with tab_bag:
         hide_index=True
     )
 
-    st.divider()
-    st.subheader(
-        "Simulator / Range Import"
+with tab_data:
+    st.header("Data Uploads")
+    st.caption(
+        "Import simulator, launch-monitor, range, and previous-round data. "
+        "My Play preserves every original column before mapping recognized metrics."
     )
+    st.subheader("Quick CSV Import")
 
     import_source = st.radio(
         "Session Type",
         [
             "Simulator",
+            "Launch Monitor",
             "Driving Range"
         ],
         horizontal=True,
@@ -22491,6 +23585,15 @@ with tab_bag:
                     type="primary",
                     use_container_width=True
                 ):
+                    raw_saved, raw_message = preserve_raw_import(
+                        sim,
+                        getattr(uploaded_csv, "name", "session.csv"),
+                        import_source,
+                    )
+                    if not raw_saved:
+                        st.warning(raw_message)
+                        st.stop()
+
                     evidence_rows = imported_session_to_evidence(
                         sim,
                         club_col,
@@ -22711,6 +23814,7 @@ with tab_bag:
             "Data source",
             [
                 "Simulator",
+                "Launch Monitor",
                 "Driving Range",
                 "Previous Round",
                 "Manual",
@@ -22746,6 +23850,15 @@ with tab_bag:
                     use_container_width=True,
                     key="import_club_data_file"
                 ):
+                    raw_saved, raw_message = preserve_raw_import(
+                        import_df,
+                        getattr(uploaded_club_file, "name", "uploaded_data"),
+                        import_source,
+                    )
+                    if not raw_saved:
+                        st.warning(raw_message)
+                        st.stop()
+
                     imported, errors = import_club_evidence_dataframe(
                         import_df,
                         import_source
@@ -22853,6 +23966,15 @@ with tab_bag:
                 use_container_width=True,
                 key="save_extracted_club_data"
             ):
+                raw_saved, raw_message = preserve_raw_import(
+                    extracted_df,
+                    getattr(active_club_data_image, "name", "simulator_photo"),
+                    "Simulator Photo",
+                )
+                if not raw_saved:
+                    st.warning(raw_message)
+                    st.stop()
+
                 imported = 0
                 errors = []
 
@@ -22931,6 +24053,104 @@ with tab_bag:
 
 
 with tab_club_analytics:
+    st.header("Club Analytics")
+    st.caption(
+        "A clean view of what My Play has learned. Open only the section you need."
+    )
+
+    analytics_snapshot = player_snapshot(load_round_history(), all_player_evidence)
+    analytics_endurance = endurance_phase_table(all_player_evidence)
+
+    analytics_col1, analytics_col2, analytics_col3 = st.columns(3)
+    analytics_col1.metric("Clubs", len(bag))
+    analytics_col2.metric("Shots learned", analytics_snapshot["shots"])
+    analytics_col3.metric("Model confidence", analytics_snapshot["confidence"])
+
+    with st.expander("Bag gapping", expanded=True):
+        gap_table = bag_gapping_table(bag, shots)
+        if gap_table.empty:
+            st.info("Add clubs to My Bag to build your yardage book.")
+        else:
+            st.dataframe(gap_table, use_container_width=True, hide_index=True)
+        for note in caddie_essentials_summary(bag, shots):
+            st.write(f"• {note}")
+
+    with st.expander("Individual club", expanded=True):
+        club_names = [club.get("Club", "") for club in bag if club.get("Club")]
+        if not club_names:
+            st.info("Add a club to My Bag before opening individual analytics.")
+        else:
+            selected_club_analytics = st.selectbox(
+                "Choose club", club_names, key="clean_club_analytics_selector"
+            )
+            selected_club_record = next(
+                (club for club in bag if club.get("Club") == selected_club_analytics), None
+            )
+            club_stats = comprehensive_club_analytics(selected_club_record, shots)
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Reliable carry", f"{club_stats['reliable_carry']:.0f} yd")
+            c2.metric("Playing carry", f"{club_stats['playing_carry']:.0f} yd")
+            c3.metric("Evidence", club_stats["sample_count"])
+            c4.metric("Confidence", club_stats["confidence"])
+
+            d1, d2, d3 = st.columns(3)
+            d1.metric(
+                "Carry dispersion",
+                f"{club_stats['carry_std']:.1f} yd"
+                if club_stats["carry_std"] is not None else "Need data",
+            )
+            d2.metric("Dominant miss", club_stats["dominant_miss"])
+            solid_rate = club_stats["solid_contact_rate"]
+            d3.metric(
+                "Solid contact",
+                f"{solid_rate * 100:.0f}%" if solid_rate is not None else "Need data",
+            )
+
+            st.markdown("**How My Play should caddie this club**")
+            for point in caddie_number_guidance(club_stats):
+                st.write(f"• {point}")
+
+            with st.expander("Advanced evidence", expanded=False):
+                dispersion_df = pd.DataFrame([
+                    {"Miss": "Left", "Rate": round(club_stats["left_rate"] * 100, 1)},
+                    {"Miss": "Right", "Rate": round(club_stats["right_rate"] * 100, 1)},
+                    {"Miss": "Short", "Rate": round(club_stats["short_rate"] * 100, 1)},
+                    {"Miss": "Long", "Rate": round(club_stats["long_rate"] * 100, 1)},
+                ])
+                st.dataframe(dispersion_df, use_container_width=True, hide_index=True)
+                if club_stats["source_performance"]:
+                    source_rows = [
+                        {
+                            "Source": source_name,
+                            "Shots": source_stats["count"],
+                            "Average carry": source_stats["carry"],
+                        }
+                        for source_name, source_stats in club_stats["source_performance"].items()
+                    ]
+                    st.dataframe(pd.DataFrame(source_rows), use_container_width=True, hide_index=True)
+
+    with st.expander("Endurance and fatigue pattern", expanded=False):
+        if analytics_endurance.empty:
+            st.info(
+                "My Play needs shot sequences attached to completed rounds before it can "
+                "compare opening, middle, late and extended performance."
+            )
+        else:
+            st.dataframe(analytics_endurance, use_container_width=True, hide_index=True)
+            st.caption(
+                "My Play compares carry relative to each club's own baseline so changing clubs "
+                "is not mistaken for fatigue."
+            )
+
+    with st.expander("How the player model works", expanded=False):
+        st.write(
+            "Stock bag values begin the model. On-course, range and launch-monitor evidence "
+            "then adjusts carry, dispersion, contact and confidence. Conclusions remain marked "
+            "as building until enough comparable evidence exists."
+        )
+
+
+if False:  # Retained legacy analytics block; replaced by the clean view above.
     st.header(
         "📈 Club Analytics"
     )
@@ -23898,6 +25118,140 @@ with tab_swing_video:
 
 
 with tab_history:
+    st.header("Round Biographies")
+    st.caption(
+        "Every completed round becomes a permanent story of what happened, what My Play learned, and what to do next."
+    )
+
+    round_history = load_round_history()
+    history = load_shots()
+
+    if round_history.empty:
+        st.info("Complete a Live Round to create your first Round Biography.")
+    else:
+        biography_options = []
+        biography_rows = {}
+        for row_index, biography_row in round_history.iterrows():
+            score_value = biography_row.get("Total Score", "")
+            course_value = biography_row.get("Course", "Unknown course")
+            date_value = str(biography_row.get("Date", ""))[:10]
+            label = f"{date_value} · {course_value} · {score_value}"
+            if label in biography_rows:
+                label = f"{label} · {row_index + 1}"
+            biography_options.append(label)
+            biography_rows[label] = biography_row
+
+        selected_biography_label = st.selectbox(
+            "Choose a round", biography_options, key="round_biography_selector"
+        )
+        selected_round_row = biography_rows[selected_biography_label]
+        biography = build_round_biography(
+            selected_round_row, all_player_evidence, round_history
+        )
+
+        st.markdown(
+            f"""
+            <div class="myplay-profile-banner">
+                <div class="myplay-eyebrow">ROUND BIOGRAPHY</div>
+                <h2>{html.escape(biography['title'])}</h2>
+                <p>{html.escape(biography['story'])}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        selected_round_id = str(selected_round_row.get("Round ID", "") or "")
+        selected_round_evidence = all_player_evidence
+        if (
+            isinstance(all_player_evidence, pd.DataFrame)
+            and not all_player_evidence.empty
+            and "Round ID" in all_player_evidence.columns
+            and selected_round_id
+        ):
+            selected_round_evidence = all_player_evidence[
+                all_player_evidence["Round ID"].fillna("").astype(str) == selected_round_id
+            ].copy()
+
+        round_insights = learned_profile_insights(selected_round_evidence)
+        round_endurance = endurance_phase_table(selected_round_evidence)
+        round_training = recommended_training(
+            round_insights, round_endurance, selected_round_evidence
+        )
+
+        with st.expander("The round in one minute", expanded=True):
+            r1, r2, r3 = st.columns(3)
+            r1.metric(
+                "Score",
+                biography["score"] if biography["score"] is not None else "Not recorded",
+            )
+            r2.metric("Shots connected", biography["shots"])
+            r3.metric("Main recorded pattern", round_insights["primary_tendency"])
+            st.write(biography["story"])
+
+        with st.expander("What went well and what changed", expanded=False):
+            if selected_round_evidence.empty:
+                st.info("No shot-by-shot evidence is connected to this round yet.")
+            else:
+                st.write(
+                    f"• Most repeatable recorded club: **{round_insights['reliable_club']}**"
+                )
+                st.write(
+                    f"• Primary recorded tendency: **{round_insights['primary_tendency']}**"
+                )
+                st.caption(
+                    "My Play reports only patterns supported by the shots attached to this round."
+                )
+
+        with st.expander("Endurance and fatigue", expanded=False):
+            if round_endurance.empty:
+                st.info(
+                    "This biography needs more sequenced shots before opening and late-round performance can be compared."
+                )
+            else:
+                st.dataframe(round_endurance, use_container_width=True, hide_index=True)
+
+        with st.expander("What My Play learned", expanded=True):
+            st.write(f"• {round_insights['primary_tendency']}")
+            st.write(
+                f"• {round_insights['reliable_club']} currently has the most repeatable recorded carry in this round."
+            )
+            st.caption(
+                "One round can strengthen or weaken confidence, but established profile tendencies change only when enough comparable evidence supports them."
+            )
+
+        with st.expander(
+            f"Recommended Training · {round_training['title']}", expanded=True
+        ):
+            st.write(round_training["summary"])
+            st.caption(f"Why: {round_training['reason']}")
+            for step_number, step in enumerate(round_training["steps"], start=1):
+                st.write(f"{step_number}. {step}")
+            if round_training.get("source_url"):
+                st.markdown(
+                    f"[{round_training['source_label']}]({round_training['source_url']})"
+                )
+            else:
+                st.caption(round_training["source_label"])
+
+        with st.expander("Complete shot timeline and raw data", expanded=False):
+            if selected_round_evidence.empty:
+                st.info("No connected shot timeline is available.")
+            else:
+                st.dataframe(
+                    selected_round_evidence, use_container_width=True, hide_index=True
+                )
+            st.download_button(
+                "Download all shot history",
+                history.to_csv(index=False).encode("utf-8"),
+                file_name="my_play_shot_history.csv",
+                mime="text/csv",
+            )
+
+        with st.expander("All completed rounds", expanded=False):
+            st.dataframe(round_history, use_container_width=True, hide_index=True)
+
+
+if False:  # Retained legacy history tables; replaced by Round Biographies above.
     st.header(
         "Analytics"
     )
@@ -24291,13 +25645,340 @@ with tab_history:
 # ============================================================
 
 with tab_game:
+    st.header("Preferences")
+    st.caption(
+        "Only open the area you want to change. Your learned performance remains automatic."
+    )
+
+    with st.expander("Player Identity", expanded=False):
+        with st.form("clean_player_identity_form"):
+            identity_col1, identity_col2 = st.columns(2)
+            with identity_col1:
+                clean_display_name = st.text_input(
+                    "Player name",
+                    value=str(profile.get("display_name", "") or ""),
+                    placeholder="What should My Play call you?",
+                )
+                clean_hand_options = ["Right-handed", "Left-handed"]
+                clean_current_hand = profile.get("handedness", "Right-handed")
+                if clean_current_hand not in clean_hand_options:
+                    clean_current_hand = "Right-handed"
+                clean_handedness = st.selectbox(
+                    "Handedness",
+                    clean_hand_options,
+                    index=clean_hand_options.index(clean_current_hand),
+                )
+            with identity_col2:
+                st.caption(
+                    "These are the only identity fields My Play needs. Golf details are kept separately below."
+                )
+            clean_save_identity = st.form_submit_button(
+                "Save Identity", type="primary", use_container_width=True
+            )
+        if clean_save_identity:
+            save_json(PROFILE_FILE, {
+                **profile,
+                "display_name": clean_display_name.strip(),
+                "handedness": clean_handedness,
+            })
+            st.success("Player identity saved.")
+            st.rerun()
+
+    with st.expander("Golf Details", expanded=False):
+        with st.form("clean_golf_details_form"):
+            golf_detail_col1, golf_detail_col2 = st.columns(2)
+            clean_experience_options = [
+                "New golfer", "Developing", "Intermediate", "Advanced"
+            ]
+            clean_experience = profile.get("experience_level", "Developing")
+            if clean_experience not in clean_experience_options:
+                clean_experience = "Developing"
+            with golf_detail_col1:
+                clean_handicap = st.text_input(
+                    "Handicap", value=str(profile.get("handicap", "") or ""),
+                    placeholder="Optional",
+                )
+                clean_typical_score = st.text_input(
+                    "Typical score",
+                    value=str(profile.get("typical_score", "") or ""),
+                    placeholder="Example: 92",
+                )
+                clean_experience_level = st.selectbox(
+                    "Experience",
+                    clean_experience_options,
+                    index=clean_experience_options.index(clean_experience),
+                )
+            with golf_detail_col2:
+                clean_default_course = st.text_input(
+                    "Home course", value=str(profile.get("default_course", "") or "")
+                )
+                clean_default_state = st.text_input(
+                    "Home state",
+                    value=str(profile.get("default_state", "NJ") or "NJ"),
+                    max_chars=2,
+                )
+            clean_save_golf_details = st.form_submit_button(
+                "Save Golf Details", use_container_width=True
+            )
+        if clean_save_golf_details:
+            save_json(PROFILE_FILE, {
+                **profile,
+                "handicap": clean_handicap,
+                "typical_score": clean_typical_score,
+                "experience_level": clean_experience_level,
+                "default_course": clean_default_course,
+                "default_state": clean_default_state.upper(),
+            })
+            st.success("Golf details saved.")
+            st.rerun()
+
+    with st.expander("Caddie Preferences", expanded=False):
+        with st.form("clean_caddie_preferences_form"):
+            caddie_pref_col1, caddie_pref_col2 = st.columns(2)
+            clean_priority_options = [
+                "Balanced", "Avoid big numbers", "Aggressive when confident",
+                "Fairways first", "Greens first"
+            ]
+            clean_priority = game_profile.get("playing_priority", "Balanced")
+            if clean_priority not in clean_priority_options:
+                clean_priority = "Balanced"
+            with caddie_pref_col1:
+                clean_preferred_leave = st.number_input(
+                    "Preferred scoring leave (yards)",
+                    min_value=30, max_value=180,
+                    value=int(profile.get("preferred_scoring_leave", 100) or 100),
+                    step=5,
+                    help="The caddie uses this target when considering a layup.",
+                )
+                clean_playing_priority = st.selectbox(
+                    "Playing strategy",
+                    clean_priority_options,
+                    index=clean_priority_options.index(clean_priority),
+                )
+            with caddie_pref_col2:
+                communication_options = ["Brief", "Balanced detail", "Explain every decision"]
+                current_communication = game_profile.get("communication_style", "Balanced detail")
+                if current_communication not in communication_options:
+                    current_communication = "Balanced detail"
+                clean_communication = st.selectbox(
+                    "Caddie response style",
+                    communication_options,
+                    index=communication_options.index(current_communication),
+                )
+            clean_save_caddie = st.form_submit_button(
+                "Save Caddie Preferences", type="primary", use_container_width=True
+            )
+        if clean_save_caddie:
+            save_json(PROFILE_FILE, {
+                **profile,
+                "preferred_scoring_leave": int(clean_preferred_leave),
+            })
+            saved = save_game_profile({
+                **game_profile,
+                "playing_priority": clean_playing_priority,
+                "communication_style": clean_communication,
+            })
+            if saved:
+                st.success("Caddie preferences saved.")
+                st.rerun()
+            else:
+                st.error("Caddie preferences could not be saved to the cloud.")
+
+    with st.expander("Goals", expanded=False):
+        with st.form("clean_player_goals_form"):
+            goal_col1, goal_col2 = st.columns(2)
+            with goal_col1:
+                clean_target_score = st.number_input(
+                    "Target 18-hole score",
+                    min_value=50, max_value=150,
+                    value=int(game_profile.get("target_score", 90) or 90),
+                    step=1,
+                )
+                goal_focus_options = [
+                    "Lower scores", "Driving", "Iron play", "Wedges",
+                    "Putting", "Course management", "Endurance"
+                ]
+                current_goal_focus = game_profile.get("goal_focus", "Lower scores")
+                if current_goal_focus not in goal_focus_options:
+                    current_goal_focus = "Lower scores"
+                clean_goal_focus = st.selectbox(
+                    "Primary goal",
+                    goal_focus_options,
+                    index=goal_focus_options.index(current_goal_focus),
+                )
+            with goal_col2:
+                clean_target_handicap = st.text_input(
+                    "Target handicap",
+                    value=str(game_profile.get("target_handicap", "") or ""),
+                    placeholder="Optional",
+                )
+                practice_time_options = ["15 minutes", "30 minutes", "45 minutes", "60 minutes"]
+                current_practice_time = game_profile.get("practice_time", "30 minutes")
+                if current_practice_time not in practice_time_options:
+                    current_practice_time = "30 minutes"
+                clean_practice_time = st.selectbox(
+                    "Normal practice time",
+                    practice_time_options,
+                    index=practice_time_options.index(current_practice_time),
+                )
+            clean_save_goals = st.form_submit_button(
+                "Save Goals", type="primary", use_container_width=True
+            )
+        if clean_save_goals:
+            saved = save_game_profile({
+                **game_profile,
+                "target_score": int(clean_target_score),
+                "target_handicap": clean_target_handicap.strip(),
+                "goal_focus": clean_goal_focus,
+                "practice_time": clean_practice_time,
+            })
+            if saved:
+                st.success("Goals saved.")
+                st.rerun()
+            else:
+                st.error("Goals could not be saved to the cloud.")
+
+    with st.expander("Manual Tendencies · Optional", expanded=False):
+        st.caption(
+            "Use these as temporary caddie hints. Automatic learned tendencies take priority when enough evidence exists."
+        )
+        with st.form("clean_manual_tendencies_form"):
+            manual_col1, manual_col2 = st.columns(2)
+            with manual_col1:
+                clean_driver_miss = st.selectbox(
+                    "Driver miss", TYPICAL_MISSES,
+                    index=TYPICAL_MISSES.index(game_profile.get("driver_miss", "unknown"))
+                    if game_profile.get("driver_miss", "unknown") in TYPICAL_MISSES else 0,
+                )
+                clean_wood_miss = st.selectbox(
+                    "Wood / hybrid miss", TYPICAL_MISSES,
+                    index=TYPICAL_MISSES.index(game_profile.get("wood_miss", "unknown"))
+                    if game_profile.get("wood_miss", "unknown") in TYPICAL_MISSES else 0,
+                )
+            with manual_col2:
+                clean_iron_miss = st.selectbox(
+                    "Iron miss", TYPICAL_MISSES,
+                    index=TYPICAL_MISSES.index(game_profile.get("iron_miss", "unknown"))
+                    if game_profile.get("iron_miss", "unknown") in TYPICAL_MISSES else 0,
+                )
+                clean_wedge_miss = st.selectbox(
+                    "Wedge miss", TYPICAL_MISSES,
+                    index=TYPICAL_MISSES.index(game_profile.get("wedge_miss", "unknown"))
+                    if game_profile.get("wedge_miss", "unknown") in TYPICAL_MISSES else 0,
+                )
+            clean_save_tendencies = st.form_submit_button(
+                "Save Manual Tendencies", use_container_width=True
+            )
+        if clean_save_tendencies:
+            saved = save_game_profile({
+                **game_profile,
+                "driver_miss": clean_driver_miss,
+                "wood_miss": clean_wood_miss,
+                "iron_miss": clean_iron_miss,
+                "wedge_miss": clean_wedge_miss,
+            })
+            if saved:
+                st.success("Manual tendencies saved.")
+                st.rerun()
+            else:
+                st.error("Manual tendencies could not be saved to the cloud.")
+
+    with st.expander("Swing Reminders", expanded=False):
+        if _cloud_ready():
+            try:
+                clean_reminder_response = (
+                    supabase.table("swing_reminders").select("reminder")
+                    .eq("user_id", _cloud_user_id()).eq("active", True)
+                    .order("created_at").execute()
+                )
+                clean_existing_reminders = "\n".join(
+                    row.get("reminder", "")
+                    for row in (clean_reminder_response.data or [])
+                    if row.get("reminder")
+                )
+            except Exception:
+                clean_existing_reminders = ""
+        elif os.path.exists(REMINDER_FILE):
+            with open(REMINDER_FILE, "r", encoding="utf-8") as reminder_file:
+                clean_existing_reminders = reminder_file.read()
+        else:
+            clean_existing_reminders = ""
+
+        with st.form("clean_swing_reminders_form"):
+            clean_reminders = st.text_area(
+                "Personal reminders",
+                value=clean_existing_reminders,
+                height=120,
+                placeholder="Smooth tempo\nFinish the turn\nDon't rush from the top",
+            )
+            clean_save_reminders = st.form_submit_button(
+                "Save Swing Reminders", use_container_width=True
+            )
+        if clean_save_reminders:
+            clean_reminder_lines = [
+                line.strip() for line in clean_reminders.splitlines() if line.strip()
+            ]
+            if _cloud_ready():
+                supabase.table("swing_reminders").delete().eq(
+                    "user_id", _cloud_user_id()
+                ).execute()
+                if clean_reminder_lines:
+                    supabase.table("swing_reminders").insert([
+                        {"user_id": _cloud_user_id(), "reminder": line, "active": True}
+                        for line in clean_reminder_lines
+                    ]).execute()
+            with open(REMINDER_FILE, "w", encoding="utf-8") as reminder_file:
+                reminder_file.write(clean_reminders)
+            st.success("Swing reminders saved.")
+
+    with st.expander("Account & Technical", expanded=False):
+        st.caption(
+            f"Signed in as {st.session_state.get('supabase_user_email', 'Golfer')}"
+        )
+        if not st.session_state.get("my_player_schema_ready", False):
+            st.warning(
+                "The My Player cloud upgrade is not detected. Some preferences may not persist across devices."
+            )
+        technical_col1, technical_col2 = st.columns(2)
+        with technical_col1:
+            if st.button(
+                "Copy Local Test Data to Cloud",
+                use_container_width=True,
+                key="clean_migrate_local_to_cloud",
+            ):
+                try:
+                    migrate_all_local_data_to_cloud(supabase)
+                    st.success("Cloud migration completed.")
+                except Exception as exc:
+                    st.error(f"Migration stopped: {exc}")
+        with technical_col2:
+            if st.button(
+                "Sign Out", use_container_width=True, key="clean_preferences_sign_out"
+            ):
+                sign_out_cloud(supabase)
+                st.rerun()
+        clean_course_stats = catalog_stats()
+        st.caption(
+            f"Course catalog: {clean_course_stats['count']:,} courses available."
+            if clean_course_stats["count"] > 0
+            else "Course catalog is not currently available."
+        )
+
+
+if False:  # Retained legacy Preferences form; replaced by the clean sections above.
     st.header(
-        "My Game"
+        "Profile & Caddie Preferences"
     )
 
     st.caption(
-        "Your player profile, reminders, and account settings."
+        "Edit only identity, goals, and preferences here. Performance conclusions update automatically from saved data."
     )
+
+    if not st.session_state.get("my_player_schema_ready", False):
+        st.warning(
+            "My Player's new cloud fields need the supplied Supabase upgrade before "
+            "scoring preferences and expanded club details can persist across devices."
+        )
 
     with st.expander(
         "⚙️ Account & Beta Tools",
@@ -24392,6 +26073,12 @@ with tab_game:
         "Player Profile"
     )
 
+    display_name = st.text_input(
+        "Player name",
+        value=str(profile.get("display_name", "") or ""),
+        placeholder="What should My Play call you?",
+    )
+
     handedness_options = [
         "Right-handed",
         "Left-handed"
@@ -24426,6 +26113,30 @@ with tab_game:
         placeholder="Optional"
     )
 
+    profile_col1, profile_col2 = st.columns(2)
+    with profile_col1:
+        typical_score = st.text_input(
+            "Typical 18-hole score",
+            value=str(profile.get("typical_score", "") or ""),
+            placeholder="Example: 92",
+        )
+        experience_options = ["New golfer", "Developing", "Intermediate", "Advanced"]
+        current_experience = profile.get("experience_level", "Developing")
+        if current_experience not in experience_options:
+            current_experience = "Developing"
+        experience_level = st.selectbox(
+            "Experience level", experience_options,
+            index=experience_options.index(current_experience),
+        )
+    with profile_col2:
+        preferred_scoring_leave = st.number_input(
+            "Preferred scoring leave (yards)",
+            min_value=30, max_value=180,
+            value=int(profile.get("preferred_scoring_leave", 100) or 100),
+            step=5,
+            help="The caddie uses this target when considering a layup.",
+        )
+
     default_course = st.text_input(
         "Default Course",
         value=profile.get(
@@ -24449,8 +26160,12 @@ with tab_game:
         save_json(
             PROFILE_FILE,
             {
+                "display_name": display_name.strip(),
                 "handedness": handedness,
                 "handicap": handicap,
+                "typical_score": typical_score,
+                "experience_level": experience_level,
+                "preferred_scoring_leave": int(preferred_scoring_leave),
                 "default_course": default_course,
                 "default_state": default_state.upper()
             }
@@ -24461,6 +26176,109 @@ with tab_game:
         )
 
         st.rerun()
+
+    st.divider()
+    st.subheader("Optional Caddie Overrides")
+    st.caption(
+        "Use these only when My Play does not have enough evidence yet. Learned tendencies on your Profile take priority as confidence grows."
+    )
+
+    tendency_col1, tendency_col2 = st.columns(2)
+    with tendency_col1:
+        driver_miss = st.selectbox(
+            "Driver miss", TYPICAL_MISSES,
+            index=TYPICAL_MISSES.index(game_profile.get("driver_miss", "unknown"))
+            if game_profile.get("driver_miss", "unknown") in TYPICAL_MISSES else 0,
+            key="game_driver_miss",
+        )
+        wood_miss = st.selectbox(
+            "Fairway wood / hybrid miss", TYPICAL_MISSES,
+            index=TYPICAL_MISSES.index(game_profile.get("wood_miss", "unknown"))
+            if game_profile.get("wood_miss", "unknown") in TYPICAL_MISSES else 0,
+            key="game_wood_miss",
+        )
+        iron_miss = st.selectbox(
+            "Iron miss", TYPICAL_MISSES,
+            index=TYPICAL_MISSES.index(game_profile.get("iron_miss", "unknown"))
+            if game_profile.get("iron_miss", "unknown") in TYPICAL_MISSES else 0,
+            key="game_iron_miss",
+        )
+        wedge_miss = st.selectbox(
+            "Wedge miss", TYPICAL_MISSES,
+            index=TYPICAL_MISSES.index(game_profile.get("wedge_miss", "unknown"))
+            if game_profile.get("wedge_miss", "unknown") in TYPICAL_MISSES else 0,
+            key="game_wedge_miss",
+        )
+    with tendency_col2:
+        shape_default = game_profile.get("normal_shot_shape", "Unknown")
+        if shape_default not in SHOT_SHAPES:
+            shape_default = "Unknown"
+        normal_shot_shape = st.selectbox(
+            "Normal shot shape", SHOT_SHAPES,
+            index=SHOT_SHAPES.index(shape_default), key="game_normal_shape",
+        )
+        game_areas = [
+            "Not selected", "Driving", "Fairway woods / hybrids", "Iron play",
+            "Approach play", "Wedges", "Bunkers", "Putting", "Course management",
+        ]
+        strongest_default = game_profile.get("strongest_area", "Not selected")
+        weakest_default = game_profile.get("weakest_area", "Not selected")
+        strongest_area = st.selectbox(
+            "Strongest part of your game", game_areas,
+            index=game_areas.index(strongest_default) if strongest_default in game_areas else 0,
+            key="game_strongest_area",
+        )
+        weakest_area = st.selectbox(
+            "Weakest part of your game", game_areas,
+            index=game_areas.index(weakest_default) if weakest_default in game_areas else 0,
+            key="game_weakest_area",
+        )
+        preferred_approach_distance = st.number_input(
+            "Most comfortable approach distance (yards)", min_value=30, max_value=220,
+            value=int(game_profile.get("preferred_approach_distance", 100) or 100), step=5,
+            key="game_preferred_approach",
+        )
+
+    trouble_options = [
+        "Not selected", "Penalty off the tee", "Right-side trouble", "Left-side trouble",
+        "Fairway bunkers", "Greenside bunkers", "Water", "Trees / recovery shots",
+        "Short-sided misses", "Three-putts",
+    ]
+    priority_options = ["Balanced", "Avoid big numbers", "Aggressive when confident", "Fairways first", "Greens first"]
+    lower_col1, lower_col2 = st.columns(2)
+    with lower_col1:
+        trouble_default = game_profile.get("trouble_tendency", "Not selected")
+        trouble_tendency = st.selectbox(
+            "Most common trouble pattern", trouble_options,
+            index=trouble_options.index(trouble_default) if trouble_default in trouble_options else 0,
+            key="game_trouble_tendency",
+        )
+    with lower_col2:
+        priority_default = game_profile.get("playing_priority", "Balanced")
+        playing_priority = st.selectbox(
+            "Preferred strategy", priority_options,
+            index=priority_options.index(priority_default) if priority_default in priority_options else 0,
+            key="game_playing_priority",
+        )
+
+    if st.button("Save Game Tendencies", type="primary", key="save_game_tendencies"):
+        saved = save_game_profile({
+            "driver_miss": driver_miss,
+            "wood_miss": wood_miss,
+            "iron_miss": iron_miss,
+            "wedge_miss": wedge_miss,
+            "normal_shot_shape": normal_shot_shape,
+            "strongest_area": strongest_area,
+            "weakest_area": weakest_area,
+            "preferred_approach_distance": int(preferred_approach_distance),
+            "trouble_tendency": trouble_tendency,
+            "playing_priority": playing_priority,
+        })
+        if saved:
+            st.success("Game tendencies saved.")
+            st.rerun()
+        else:
+            st.error("Run the supplied Supabase My Player upgrade, then save again.")
 
     st.divider()
     st.subheader(
