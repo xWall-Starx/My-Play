@@ -1,36 +1,55 @@
-MY PLAY — GITHUB UPDATE
+MY PLAY — FACILITY UPDATE
 
-This release includes:
-- Clickable high-tech clubhouse navigation
-- Course Door and Performance Center Night scenery
-- Educational welcome and Home content
-- Password changes
-- Privacy & Data Notice and Beta Terms
-- Core-data download
-- Protected automatic account deletion code
-- MIT license so others may use the project
+Nothing changes on the public app until you complete these steps.
 
-UPLOAD TO GITHUB
-1. Right-click the downloaded ZIP and choose Extract All.
-2. Open the extracted My-Play-Release folder.
-3. Open https://github.com/xWall-Starx/My-Play in your browser.
-4. Select Add file, then Upload files.
-5. Drag every item inside My-Play-Release onto the GitHub upload page.
-6. Wait until all files finish loading.
-7. In the commit message box, enter:
-   Add interactive clubhouse and account privacy tools
-8. Select Commit changes.
-9. Open the repository page again and confirm both PNG images, app.py,
-   README.md, LICENSE, .gitignore, and the supabase folder are present.
+PART 1 — UPLOAD THE APP AND IMAGES TO GITHUB
 
-STREAMLIT
-10. Open your Streamlit Community Cloud app.
-11. If it does not update automatically, open Manage app and reboot it.
+1. Open https://github.com/xWall-Starx/My-Play
+2. Select Add file, then Upload files.
+3. Open this update folder on your computer.
+4. Drag these files into the GitHub upload box:
+   - app.py
+   - requirements.txt
+   - README.md
+   - LICENSE
+   - MUSIC_SETUP.md
+   - FUEL_SETUP.md
+   - every file whose name starts with myplay- and ends with .png
+5. At the bottom, enter: Facility rooms, Play hub, music and Fuel
+6. Select Commit changes.
 
-IMPORTANT — AUTOMATIC DELETION
-The app button is included, but it becomes active only after the protected
-delete-my-account Edge Function is deployed to the same Supabase project.
-Do not put a Supabase service-role key in app.py, Streamlit, or GitHub.
-Test deletion with a disposable account after deployment.
+PART 2 — SET UP THE PRIVATE FUEL LOG IN SUPABASE
 
-Privacy/support contact: Staticprophet77@gmail.com
+1. Open your My Play project in Supabase.
+2. Open SQL Editor in the left menu.
+3. Select New query.
+4. Open supabase/nutrition_setup.sql from this update.
+5. Copy all of that file into the Supabase query.
+6. Select Run. Wait for the success message.
+
+If My Soundtrack has not been set up yet, repeat the same steps with:
+supabase/music_setup.sql
+
+PART 3 — UPDATE AUTOMATIC ACCOUNT DELETION
+
+1. In Supabase, open Edge Functions.
+2. Open delete-my-account.
+3. Replace its index.ts code with:
+   supabase/functions/delete-my-account/index.ts
+4. Select Deploy function.
+
+PART 4 — CHECK THE PUBLIC APP
+
+1. Open Streamlit Community Cloud.
+2. Open My Play and wait for the newest GitHub commit to finish deploying.
+3. Refresh the app.
+4. Check Home, Play, Course, Driving Range, Caddie, My Player,
+   My Soundtrack, Fuel, and Settings.
+5. Use a disposable test account to verify save, export, and account deletion.
+
+IMPORTANT
+
+- Never upload .streamlit/secrets.toml to GitHub.
+- Keep all myplay-*.png files in the same GitHub folder as app.py.
+- This beta's privacy language is a professional baseline, not legal advice.
+  Get qualified legal review before a paid or widely promoted public launch.

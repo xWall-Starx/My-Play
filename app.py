@@ -144,6 +144,60 @@ st.markdown(
         margin: 0;
         max-width: 480px;
     }
+    .myplay-caddie-hero--compact { min-height: 315px; }
+    .myplay-caddie-hero--compact .myplay-caddie-hero__copy h1 {
+        font-size: clamp(2rem, 4vw, 3.65rem);
+    }
+    .myplay-destination-hero {
+        min-height: 285px;
+        display: flex;
+        align-items: center;
+        padding: clamp(1.25rem, 3.2vw, 3rem);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 1.2rem;
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+        margin: 0.4rem 0 1.25rem;
+    }
+    .myplay-destination-hero__copy { width: min(520px, 58%); }
+    .myplay-destination-hero__copy h2 {
+        color: #fff;
+        font-size: clamp(2rem, 4vw, 3.25rem);
+        line-height: 1;
+        margin: 0 0 0.7rem;
+        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.58);
+    }
+    .myplay-destination-hero__copy p {
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 1rem;
+        line-height: 1.5;
+        margin: 0;
+        text-shadow: 0 2px 14px rgba(0, 0, 0, 0.58);
+    }
+    .myplay-route-card {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        min-height: 320px;
+        padding: 1.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 1.15rem;
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+        text-decoration: none !important;
+        overflow: hidden;
+        transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    }
+    .myplay-route-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(91, 255, 193, 0.74);
+        box-shadow: 0 20px 46px rgba(0, 0, 0, 0.38);
+    }
+    .myplay-route-card__copy { display: grid; gap: 0.35rem; }
+    .myplay-route-card__copy strong { color: #fff; font-size: 1.5rem; }
+    .myplay-route-card__copy small { color: rgba(255, 255, 255, 0.78); font-size: 0.92rem; line-height: 1.4; }
     .myplay-purpose {
         padding: 1rem 1.1rem;
         border-left: 4px solid var(--myplay-green);
@@ -208,6 +262,8 @@ st.markdown(
     .myplay-hotspot--caddie { left: 42%; top: 58%; }
     .myplay-hotspot--bag { left: 87%; top: 67%; }
     .myplay-hotspot--settings { left: 89%; top: 25%; }
+    .myplay-hotspot--music { left: 72%; top: 88%; }
+    .myplay-hotspot--fuel { left: 57%; top: 82%; }
     .myplay-map-caption {
         display: flex;
         justify-content: space-between;
@@ -216,6 +272,83 @@ st.markdown(
         font-size: 0.88rem;
         margin-bottom: 1rem;
     }
+    /* The clubhouse scene is the primary navigation. Keep the underlying
+       Streamlit tabs for routing/accessibility, but hide only the main row. */
+    div[data-testid="stTabs"].st-key-main_navigation > div[data-baseweb="tab-list"],
+    .st-key-main_navigation > div[data-baseweb="tab-list"],
+    .st-key-main_navigation > div[data-testid="stTabs"] > div[data-baseweb="tab-list"],
+    .st-key-main_navigation > div > div[data-baseweb="tab-list"] {
+        display: none !important;
+    }
+    div[data-testid="stTabs"].st-key-my_player_navigation > div[data-baseweb="tab-list"],
+    .st-key-my_player_navigation > div[data-baseweb="tab-list"],
+    .st-key-my_player_navigation > div[data-testid="stTabs"] > div[data-baseweb="tab-list"],
+    .st-key-my_player_navigation > div > div[data-baseweb="tab-list"] {
+        display: none !important;
+    }
+    .myplay-room-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0.35rem 0 1.2rem;
+    }
+    .myplay-room-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2.5rem;
+        padding: 0.55rem 0.82rem;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--myplay-ink) !important;
+        font-size: 0.84rem;
+        font-weight: 750;
+        text-decoration: none !important;
+        transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+    }
+    .myplay-room-chip:hover, .myplay-room-chip--active {
+        transform: translateY(-2px);
+        border-color: rgba(91, 255, 193, 0.72);
+        background: rgba(11, 201, 130, 0.14);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+    }
+    .stButton > button, .stDownloadButton > button {
+        transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, filter 150ms ease !important;
+    }
+    .stButton > button:hover, .stDownloadButton > button:hover {
+        transform: translateY(-2px);
+        border-color: rgba(91, 255, 193, 0.72) !important;
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24), 0 0 0 3px rgba(11, 201, 130, 0.10);
+        filter: brightness(1.06);
+    }
+    .stButton > button:active, .stDownloadButton > button:active {
+        transform: translateY(0) scale(0.99);
+    }
+    .stButton > button:focus-visible, .stDownloadButton > button:focus-visible,
+    .myplay-route-card:focus-visible, .myplay-room-chip:focus-visible, .myplay-hotspot:focus-visible {
+        outline: 3px solid rgba(91, 255, 193, 0.75);
+        outline-offset: 3px;
+    }
+    button[kind="primary"], button[data-testid="stBaseButton-primary"] {
+        background: linear-gradient(135deg, #0bc982, #087f58) !important;
+        border-color: rgba(91, 255, 193, 0.72) !important;
+        color: #fff !important;
+    }
+    .myplay-clubhouse-return {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0.2rem 0 0.9rem;
+        padding: 0.5rem 0.78rem;
+        border: 1px solid rgba(125, 228, 186, 0.42);
+        border-radius: 999px;
+        color: #b9f7dc !important;
+        background: rgba(11, 62, 45, 0.35);
+        font-size: 0.88rem;
+        font-weight: 800;
+        text-decoration: none !important;
+    }
+    .myplay-clubhouse-return:hover { background: rgba(11, 92, 62, 0.6); }
     .myplay-card {
         min-height: 126px;
         padding: 1rem;
@@ -294,6 +427,9 @@ st.markdown(
         .myplay-hotspot { padding: 0.38rem 0.48rem; }
         .myplay-hotspot::before { width: 0.35rem; height: 0.35rem; }
         .myplay-map-caption { display: block; }
+        .myplay-destination-hero { min-height: 330px; align-items: flex-end; background-position: 64% center; }
+        .myplay-destination-hero__copy { width: 100%; }
+        .myplay-route-card { min-height: 235px; }
     }
     </style>
     """,
@@ -318,6 +454,23 @@ CUSTOM_COURSE_LIBRARY_FILE = "community_course_library.json"
 COURSE_SUBMISSION_FILE = "course_submissions.json"
 HERO_IMAGE_FILE = "myplay-performance-center-hero.png"
 FACILITY_HUB_IMAGE_FILE = "myplay-clubhouse-hub.png"
+DESTINATION_IMAGES = {
+    "course": "myplay-live-course.png",
+    "range": "myplay-driving-range.png",
+    "caddie": "myplay-caddie-room.png",
+    "bag": "myplay-bag-room.png",
+    "uploads": "myplay-data-lab.png",
+    "settings": "myplay-settings-room.png",
+    "music": "myplay-soundtrack-room.png",
+    "player": "myplay-step-build-player.png",
+    "fuel": "myplay-fuel-room.png",
+    "swing": "myplay-performance-center-hero.png",
+}
+WELCOME_STEP_IMAGES = [
+    "myplay-step-build-player.png",
+    "myplay-step-load-game.png",
+    "myplay-step-play-caddie.png",
+]
 PRIVACY_CONTACT = "Staticprophet77@gmail.com"
 
 
@@ -331,7 +484,12 @@ def asset_data_uri(filename):
     return f"data:{mime_type};base64,{encoded}"
 
 
-def render_caddie_hero(headline, description, eyebrow="MY PLAY · PERSONAL AI CADDIE"):
+def render_caddie_hero(
+    headline,
+    description,
+    eyebrow="MY PLAY · PERSONAL AI CADDIE",
+    compact=False,
+):
     hero_uri = asset_data_uri(HERO_IMAGE_FILE)
     background = (
         f"linear-gradient(90deg, rgba(5, 10, 13, 0.98) 0%, rgba(5, 10, 13, 0.88) 27%, "
@@ -341,7 +499,7 @@ def render_caddie_hero(headline, description, eyebrow="MY PLAY · PERSONAL AI CA
     )
     st.markdown(
         f"""
-        <section class="myplay-caddie-hero" style="background-image: {background};">
+        <section class="myplay-caddie-hero{' myplay-caddie-hero--compact' if compact else ''}" style="background-image: {background};">
             <div class="myplay-caddie-hero__copy">
                 <div class="myplay-caddie-hero__eyebrow">{html.escape(eyebrow)}</div>
                 <h1>{html.escape(headline)}</h1>
@@ -351,6 +509,67 @@ def render_caddie_hero(headline, description, eyebrow="MY PLAY · PERSONAL AI CA
         """,
         unsafe_allow_html=True,
     )
+
+
+def render_destination_hero(destination, eyebrow, headline, description):
+    image_file = DESTINATION_IMAGES.get(destination, HERO_IMAGE_FILE)
+    image_uri = asset_data_uri(image_file)
+    background = (
+        f"linear-gradient(90deg, rgba(4, 9, 11, 0.97) 0%, rgba(4, 9, 11, 0.78) 40%, "
+        f"rgba(4, 9, 11, 0.16) 78%, rgba(4, 9, 11, 0.06) 100%), url('{image_uri}')"
+        if image_uri
+        else "linear-gradient(135deg, #08100d 0%, #163d2c 100%)"
+    )
+    st.markdown(
+        f"""
+        <section class="myplay-destination-hero" style="background-image: {background};">
+            <div class="myplay-destination-hero__copy">
+                <div class="myplay-caddie-hero__eyebrow">{html.escape(eyebrow)}</div>
+                <h2>{html.escape(headline)}</h2>
+                <p>{html.escape(description)}</p>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_route_card(destination, title, description, href):
+    image_uri = asset_data_uri(DESTINATION_IMAGES.get(destination, ""))
+    background = (
+        f"linear-gradient(180deg, rgba(4, 9, 11, 0.02) 20%, rgba(4, 9, 11, 0.94) 100%), url('{image_uri}')"
+        if image_uri
+        else "linear-gradient(135deg, #0b251c 0%, #07100d 100%)"
+    )
+    st.markdown(
+        f"""
+        <a class="myplay-route-card" href="{html.escape(href)}" target="_self" style="background-image: {background};">
+            <span class="myplay-route-card__copy">
+                <strong>{html.escape(title)}</strong>
+                <small>{html.escape(description)}</small>
+            </span>
+        </a>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_my_player_room_nav(active):
+    rooms = [
+        ("player", "Profile"),
+        ("bag", "My Bag"),
+        ("preferences", "Preferences"),
+        ("analytics", "Club Analytics"),
+        ("rounds", "Round Stories"),
+        ("swing", "Swing Video"),
+        ("uploads", "Data Uploads"),
+    ]
+    links = "".join(
+        f'<a class="myplay-room-chip{" myplay-room-chip--active" if route == active else ""}" '
+        f'href="?hub={route}" target="_self">{html.escape(label)}</a>'
+        for route, label in rooms
+    )
+    st.markdown(f'<nav class="myplay-room-nav">{links}</nav>', unsafe_allow_html=True)
 
 
 def render_clickable_facility():
@@ -368,15 +587,17 @@ def render_clickable_facility():
         f"""
         <div class="myplay-facility-map" aria-label="Interactive My Play clubhouse">
             <img src="{facility_uri}" alt="High-tech golf performance center" />
-            <a class="myplay-hotspot myplay-hotspot--round" href="?hub=round" target="_self" aria-label="Open Live Round">Live Round</a>
+            <a class="myplay-hotspot myplay-hotspot--round" href="?hub=play" target="_self" aria-label="Choose Course or Driving Range">Play</a>
             <a class="myplay-hotspot myplay-hotspot--uploads" href="?hub=uploads" target="_self" aria-label="Open Data Uploads">Data Uploads</a>
             <a class="myplay-hotspot myplay-hotspot--caddie" href="?hub=caddie" target="_self" aria-label="Open Caddie">Caddie</a>
             <a class="myplay-hotspot myplay-hotspot--bag" href="?hub=bag" target="_self" aria-label="Open My Bag">My Bag</a>
             <a class="myplay-hotspot myplay-hotspot--settings" href="?hub=settings" target="_self" aria-label="Open Settings">Settings</a>
+            <a class="myplay-hotspot myplay-hotspot--music" href="?hub=music" target="_self" aria-label="Open My Soundtrack">My Soundtrack</a>
+            <a class="myplay-hotspot myplay-hotspot--fuel" href="?hub=fuel" target="_self" aria-label="Open Fuel room">Fuel</a>
         </div>
         <div class="myplay-map-caption">
             <span>Select a glowing destination inside your clubhouse.</span>
-            <span>The standard navigation remains available above.</span>
+            <span>Your My Play logo always brings you back here.</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -392,7 +613,7 @@ My Play stores the information needed to create and improve your personal caddie
 
 **Optional information**
 
-Location, voice recordings, photos, scorecards, simulator files, and swing videos are used only when you choose those features. My Play should explain why an optional permission or upload is needed before you use it.
+Location, voice recordings, photos, scorecards, simulator files, swing videos, personal music uploads, Fuel Log entries, and Performance Check-Ins are used only when you choose those features. Meal, snack, hydration, sleep, energy, stress, mood, and soreness entries are optional wellness information and remain private to your account by default. The caddie may use a check-in only when you affirmatively allow it on that entry. My Play should explain why an optional permission or upload is needed before you use it.
 
 **How information is processed**
 
@@ -402,11 +623,11 @@ Location, voice recordings, photos, scorecards, simulator files, and swing video
 
 **Sharing and selling**
 
-My Play does not sell your personal information. Your player profile and golf history are not public by default. Information is provided to service providers only as needed to operate features you choose, maintain the service, protect accounts, or comply with law.
+My Play does not sell your personal information. Your player profile, golf history, wellness entries, and inferred preferences are not public by default and are not used for hidden health profiling or advertising. Information is provided to service providers only as needed to operate features you choose, maintain the service, protect accounts, or comply with law.
 
 **Your choices**
 
-You may avoid optional voice, photo, video, and precise-location features and continue using manual entry. You may download a copy of core My Play data or permanently delete your account and associated cloud data from Settings. For corrections, questions, or help with a request, contact **{PRIVACY_CONTACT}** from the email address connected to the account.
+You may avoid optional voice, photo, video, precise-location, music, and Fuel Log features and continue using the rest of My Play. You may download a copy of core My Play data or permanently delete your account and associated cloud data from Settings. For corrections, questions, or help with a request, contact **{PRIVACY_CONTACT}** from the email address connected to the account.
 
 **Retention and security**
 
@@ -426,7 +647,7 @@ def render_beta_terms():
         f"""
 **Purpose of the service**
 
-My Play provides golf planning, tracking, and AI-assisted caddie recommendations. Recommendations are informational decision support—not a guarantee of performance, safety, course conditions, or results. Players remain responsible for their decisions, surroundings, local rules, and course policies.
+My Play provides golf planning, tracking, AI-assisted caddie recommendations, and optional general wellness planning. Golf and Fuel recommendations are informational decision support—not medical advice and not a guarantee of performance, safety, course conditions, or results. Players remain responsible for their decisions, health needs, surroundings, local rules, and course policies.
 
 **Your account**
 
@@ -438,7 +659,7 @@ You retain ownership of the golf information and media you submit. You permit My
 
 **Acceptable use**
 
-Do not upload content you do not have permission to use, attempt to access another player's information, interfere with the service, misuse AI features, or use My Play for unlawful activity.
+Do not upload music or other content you do not own or have permission to use, attempt to access another player's information, interfere with the service, misuse AI features, or use My Play for unlawful activity.
 
 **Beta availability**
 
@@ -451,7 +672,16 @@ Material changes to these notices should be communicated in the app with an upda
     )
 
 
-def build_player_export(profile, game_profile, bag, shots, rounds):
+def build_player_export(
+    profile,
+    game_profile,
+    bag,
+    shots,
+    rounds,
+    music_tracks=None,
+    nutrition_logs=None,
+    performance_checkins=None,
+):
     """Create a portable ZIP containing the signed-in golfer's core data."""
     export_buffer = io.BytesIO()
     with zipfile.ZipFile(
@@ -477,6 +707,18 @@ def build_player_export(profile, game_profile, bag, shots, rounds):
         archive.writestr(
             "golf-bag.json",
             json.dumps(bag or [], indent=2, default=str),
+        )
+        archive.writestr(
+            "music-library.json",
+            json.dumps(music_tracks or [], indent=2, default=str),
+        )
+        archive.writestr(
+            "fuel-log.json",
+            json.dumps(nutrition_logs or [], indent=2, default=str),
+        )
+        archive.writestr(
+            "performance-checkins.json",
+            json.dumps(performance_checkins or [], indent=2, default=str),
         )
         if isinstance(shots, pd.DataFrame):
             archive.writestr("shots.csv", shots.to_csv(index=False))
@@ -1210,6 +1452,7 @@ def authentication_screen(
             with st.container(
                 border=True
             ):
+                st.image(WELCOME_STEP_IMAGES[0], use_container_width=True)
                 st.markdown(
                     "### 1 · Build My Player"
                 )
@@ -1221,19 +1464,21 @@ def authentication_screen(
             with st.container(
                 border=True
             ):
+                st.image(WELCOME_STEP_IMAGES[1], use_container_width=True)
                 st.markdown(
-                    "### 2 · Read Every Shot"
+                    "### 2 · Load My Game"
                 )
                 st.caption(
-                    "My Play considers distance, lie, wind, temperature, elevation, hazards, green conditions, and pin position."
+                    "Add range, simulator, launch-monitor, or round data. My Play organizes it into one private player model."
                 )
 
         with feature_col3:
             with st.container(
                 border=True
             ):
+                st.image(WELCOME_STEP_IMAGES[2], use_container_width=True)
                 st.markdown(
-                    "### 3 · Get a Real Plan"
+                    "### 3 · Play With My Caddie"
                 )
                 st.caption(
                     "Your caddie recommends a club, playing distance, target line, safest miss, strategy, and confidence—then learns from the result."
@@ -1248,19 +1493,10 @@ def authentication_screen(
         )
 
         st.stop()
-
     # ========================================================
     # SIGN IN
     # ========================================================
     if auth_view == "signin":
-        st.title(
-            "⛳ My Play"
-        )
-
-        st.subheader(
-            "Welcome back"
-        )
-
         if st.session_state.pop(
             "email_confirmed_message",
             False
@@ -1270,7 +1506,7 @@ def authentication_screen(
             )
 
         if st.button(
-            "← Back",
+            "← Back to Welcome",
             key="signin_back_to_welcome"
         ):
             st.session_state[
@@ -1278,69 +1514,94 @@ def authentication_screen(
             ] = "welcome"
             st.rerun()
 
-        email = st.text_input(
-            "Email",
-            key="auth_login_email"
+        render_caddie_hero(
+            "Welcome back to the clubhouse.",
+            "Your bag, tendencies, rounds, and caddie knowledge are waiting exactly where you left them.",
+            eyebrow="MY PLAY · MEMBER ENTRANCE",
+            compact=True,
         )
 
-        password = st.text_input(
-            "Password",
-            type="password",
-            key="auth_login_password"
-        )
+        signin_story, signin_form = st.columns([1.1, 0.9], gap="large")
 
-        if st.button(
-            "Sign In",
-            type="primary",
-            use_container_width=True,
-            key="auth_login_button"
-        ):
-            try:
-                response = client.auth.sign_in_with_password({
-                    "email": email.strip(),
-                    "password": password
-                })
+        with signin_story:
+            st.markdown("### One login. Your entire game.")
+            st.write(
+                "My Play brings your personal golf information into one private "
+                "performance center so the advice gets more useful over time."
+            )
+            with st.container(border=True):
+                st.markdown("**Inside your clubhouse**")
+                st.write("🏌️ **Live Round** — plan the shot and record the result")
+                st.write("🧠 **Personal Caddie** — recommendations built around your game")
+                st.write("🎒 **My Player** — clubs, distances, misses, and development")
+                st.write("📊 **Performance Center** — imports, rounds, and analytics")
+            st.caption(
+                "Your player profile and golf history are private by default. "
+                "Optional data features run only when you choose them."
+            )
 
-                store_auth_session(
-                    response
+        with signin_form:
+            with st.container(border=True):
+                st.markdown("### Enter My Play")
+                st.caption("Sign in to open your personal clubhouse.")
+
+                email = st.text_input(
+                    "Email",
+                    key="auth_login_email",
+                    placeholder="you@example.com",
                 )
 
-                st.rerun()
-
-            except Exception as exc:
-                st.error(
-                    f"Could not sign in: {exc}"
+                password = st.text_input(
+                    "Password",
+                    type="password",
+                    key="auth_login_password",
                 )
 
-        st.caption(
-            "New to My Play?"
-        )
+                if st.button(
+                    "Enter the Clubhouse",
+                    type="primary",
+                    use_container_width=True,
+                    key="auth_login_button"
+                ):
+                    try:
+                        response = client.auth.sign_in_with_password({
+                            "email": email.strip(),
+                            "password": password
+                        })
 
-        if st.button(
-            "Create an Account",
-            use_container_width=True,
-            key="signin_go_signup"
-        ):
-            st.session_state[
-                "auth_view"
-            ] = "signup"
-            st.rerun()
+                        store_auth_session(
+                            response
+                        )
+
+                        st.rerun()
+
+                    except Exception as exc:
+                        st.error(
+                            f"Could not sign in: {exc}"
+                        )
+
+                st.divider()
+                st.caption("New golfer or first visit?")
+
+                if st.button(
+                    "Create My Player",
+                    use_container_width=True,
+                    key="signin_go_signup"
+                ):
+                    st.session_state[
+                        "auth_view"
+                    ] = "signup"
+                    st.rerun()
+
+                st.caption(f"Account help: {PRIVACY_CONTACT}")
 
         st.stop()
 
     # ========================================================
     # CREATE ACCOUNT
     # ========================================================
-    st.title(
-        "⛳ My Play"
-    )
-
-    st.subheader(
-        "Create your account"
-    )
-
     if st.button(
-        "← Back",
+        "← Back to Welcome",
         key="signup_back_to_welcome"
     ):
         st.session_state[
@@ -1348,110 +1609,115 @@ def authentication_screen(
         ] = "welcome"
         st.rerun()
 
-    signup_email = st.text_input(
-        "Email",
-        key="auth_signup_email"
+    render_caddie_hero(
+        "Build your player. Meet your caddie.",
+        "Start with one club or everything you know. My Play turns your real golf information into a caddie that grows with your game.",
+        eyebrow="MY PLAY · NEW PLAYER REGISTRATION",
+        compact=True,
     )
 
-    signup_password = st.text_input(
-        "Password",
-        type="password",
-        key="auth_signup_password"
-    )
+    signup_story, signup_form = st.columns([1.05, 0.95], gap="large")
 
-    signup_confirm = st.text_input(
-        "Confirm Password",
-        type="password",
-        key="auth_signup_confirm"
-    )
+    with signup_story:
+        st.markdown("### Your first session is simple")
+        st.write(
+            "You do not need perfect statistics or a complete bag to begin. "
+            "My Play helps you add information at your own pace."
+        )
+        with st.container(border=True):
+            st.markdown("**What happens next**")
+            st.write("**1.** Confirm your email and enter the clubhouse")
+            st.write("**2.** Add one trusted club and carry distance")
+            st.write("**3.** Play, speak, or import data")
+            st.write("**4.** Let your caddie learn from real results")
+        st.info("Public beta · Start free · Download or delete your data from Settings")
 
-    with st.expander("Privacy & Data Notice", expanded=False):
-        render_beta_data_notice()
+    with signup_form:
+        with st.container(border=True):
+            st.markdown("### Create My Player")
+            st.caption("Your private player profile starts here.")
 
-    with st.expander("Beta Terms of Use", expanded=False):
-        render_beta_terms()
-
-    signup_accept = st.checkbox(
-        "I have read and agree to the Privacy & Data Notice and Beta Terms of Use.",
-        key="auth_signup_accept",
-    )
-
-    if st.button(
-        "Create My Play Account",
-        type="primary",
-        use_container_width=True,
-        key="auth_signup_button",
-        disabled=not signup_accept,
-    ):
-        if len(
-            signup_password
-        ) < 6:
-            st.warning(
-                "Use a password with at least 6 characters."
+            signup_email = st.text_input(
+                "Email",
+                key="auth_signup_email",
+                placeholder="you@example.com",
             )
 
-        elif signup_password != signup_confirm:
-            st.warning(
-                "The passwords do not match."
+            signup_password = st.text_input(
+                "Password",
+                type="password",
+                key="auth_signup_password",
+                help="Use at least 8 characters.",
             )
 
-        else:
-            try:
-                response = client.auth.sign_up({
-                    "email": signup_email.strip(),
-                    "password": signup_password,
-                    "options": {
-                        "email_redirect_to": auth_confirmation_redirect_url(),
-                        "data": {
-                            "privacy_notice_version": "2026-09-03",
-                            "beta_terms_version": "2026-09-03",
-                            "accepted_at": datetime.now(timezone.utc).isoformat(),
-                        },
-                    }
-                })
+            signup_confirm = st.text_input(
+                "Confirm Password",
+                type="password",
+                key="auth_signup_confirm"
+            )
 
-                store_auth_session(
-                    response
-                )
+            with st.expander("Privacy & Data Notice", expanded=False):
+                render_beta_data_notice()
 
-                if getattr(
-                    response,
-                    "session",
-                    None
-                ) is None:
-                    st.session_state[
-                        "signup_confirmation_sent"
-                    ] = True
+            with st.expander("Beta Terms of Use", expanded=False):
+                render_beta_terms()
 
-                    st.success(
-                        "Account created. Check your email and tap Confirm. My Play will bring you back to Sign In."
-                    )
+            signup_accept = st.checkbox(
+                "I agree to the Privacy & Data Notice and Beta Terms.",
+                key="auth_signup_accept",
+            )
+
+            if st.button(
+                "Create My Player",
+                type="primary",
+                use_container_width=True,
+                key="auth_signup_button",
+                disabled=not signup_accept,
+            ):
+                if len(signup_password) < 8:
+                    st.warning("Use a password with at least 8 characters.")
+
+                elif signup_password != signup_confirm:
+                    st.warning("The passwords do not match.")
 
                 else:
+                    try:
+                        response = client.auth.sign_up({
+                            "email": signup_email.strip(),
+                            "password": signup_password,
+                            "options": {
+                                "email_redirect_to": auth_confirmation_redirect_url(),
+                                "data": {
+                                    "privacy_notice_version": "2026-09-03",
+                                    "beta_terms_version": "2026-09-03",
+                                    "accepted_at": datetime.now(timezone.utc).isoformat(),
+                                },
+                            }
+                        })
+
+                        store_auth_session(response)
+
+                        if getattr(response, "session", None) is None:
+                            st.session_state["signup_confirmation_sent"] = True
+                            st.success(
+                                "Account created. Check your email and select Confirm. "
+                                "My Play will bring you back to Sign In."
+                            )
+                        else:
+                            st.rerun()
+
+                    except Exception as exc:
+                        st.error(f"Could not create account: {exc}")
+
+            if st.session_state.get("signup_confirmation_sent"):
+                if st.button(
+                    "Go to Sign In",
+                    use_container_width=True,
+                    key="signup_go_signin"
+                ):
+                    st.session_state["auth_view"] = "signin"
+                    st.session_state["signup_confirmation_sent"] = False
                     st.rerun()
-
-            except Exception as exc:
-                st.error(
-                    f"Could not create account: {exc}"
-                )
-
-    if st.session_state.get(
-        "signup_confirmation_sent"
-    ):
-        if st.button(
-            "Go to Sign In",
-            use_container_width=True,
-            key="signup_go_signin"
-        ):
-            st.session_state[
-                "auth_view"
-            ] = "signin"
-
-            st.session_state[
-                "signup_confirmation_sent"
-            ] = False
-
-            st.rerun()
 
     st.stop()
 
@@ -4036,6 +4302,23 @@ def imported_session_to_evidence(
             evidence_row
         )
 
+    checkins = load_performance_checkins(limit=1)
+    if checkins and bool(checkins[0].get("use_for_caddie")):
+        checkin = checkins[0]
+        rows.append({
+            "voluntary_performance_checkin": {
+                "sleep_hours": checkin.get("sleep_hours"),
+                "sleep_quality_1_to_5": checkin.get("sleep_quality"),
+                "energy_1_to_5": checkin.get("energy"),
+                "stress_1_to_5": checkin.get("stress"),
+                "mood_1_to_5": checkin.get("mood"),
+                "soreness_1_to_5": checkin.get("soreness"),
+                "player_note": checkin.get("notes"),
+                "recorded_at": checkin.get("created_at"),
+                "permission": "Player explicitly allowed this check-in to inform caddie tone and planning.",
+            }
+        })
+
     return rows
 
 def unified_context_summary(
@@ -4796,6 +5079,221 @@ def caddie_essentials_summary(
 
 SWING_VIDEO_BUCKET = "Swing-Videos"
 SWING_VIDEO_CACHE_DIR = "swing_video_cache"
+MUSIC_BUCKET = "Golf-Music"
+MUSIC_MAX_BYTES = 6 * 1024 * 1024
+
+
+def safe_music_filename(filename):
+    original = Path(str(filename or "track.mp3")).name
+    stem = re.sub(r"[^A-Za-z0-9._-]+", "-", Path(original).stem).strip("-._")
+    suffix = Path(original).suffix.lower()
+    return f"{stem or 'track'}{suffix}"
+
+
+def load_music_tracks():
+    if not _cloud_ready():
+        return []
+    try:
+        response = (
+            supabase.table("music_tracks")
+            .select(
+                "id,title,artist,playlist_name,storage_path,mime_type,file_size,created_at"
+            )
+            .eq("user_id", _cloud_user_id())
+            .order("created_at", desc=False)
+            .execute()
+        )
+        return response.data or []
+    except Exception:
+        return []
+
+
+def signed_music_url(storage_path, expires_seconds=3600):
+    if not _cloud_ready() or not storage_path:
+        return None
+    try:
+        response = (
+            supabase.storage.from_(MUSIC_BUCKET)
+            .create_signed_url(storage_path, expires_seconds)
+        )
+        if isinstance(response, dict):
+            return (
+                response.get("signedURL")
+                or response.get("signedUrl")
+                or response.get("signed_url")
+            )
+    except Exception:
+        return None
+    return None
+
+
+def upload_music_track(uploaded_file, title, artist, playlist_name):
+    if not _cloud_ready():
+        raise RuntimeError("Sign in before uploading music.")
+    file_bytes = uploaded_file.getvalue()
+    if not file_bytes:
+        raise ValueError("The selected audio file is empty.")
+    if len(file_bytes) > MUSIC_MAX_BYTES:
+        raise ValueError("For the beta, each audio file must be 6 MB or smaller.")
+
+    clean_name = safe_music_filename(uploaded_file.name)
+    suffix = Path(clean_name).suffix.lower()
+    allowed_types = {
+        ".mp3": "audio/mpeg",
+        ".m4a": "audio/mp4",
+        ".wav": "audio/wav",
+    }
+    if suffix not in allowed_types:
+        raise ValueError("Upload an MP3, M4A, or WAV audio file.")
+
+    user_id = _cloud_user_id()
+    storage_path = f"{user_id}/{uuid.uuid4().hex}-{clean_name}"
+    mime_type = allowed_types[suffix]
+    try:
+        supabase.storage.from_(MUSIC_BUCKET).upload(
+            path=storage_path,
+            file=file_bytes,
+            file_options={
+                "content-type": mime_type,
+                "cache-control": "3600",
+                "upsert": "false",
+            },
+        )
+        response = supabase.table("music_tracks").insert({
+            "user_id": user_id,
+            "title": title.strip() or Path(clean_name).stem,
+            "artist": artist.strip() or "My Music",
+            "playlist_name": playlist_name.strip() or "My Golf Playlist",
+            "storage_path": storage_path,
+            "mime_type": mime_type,
+            "file_size": len(file_bytes),
+        }).execute()
+        return (response.data or [{}])[0]
+    except Exception:
+        try:
+            supabase.storage.from_(MUSIC_BUCKET).remove([storage_path])
+        except Exception:
+            pass
+        raise
+
+
+def delete_music_track(track):
+    storage_path = str(track.get("storage_path", "") or "")
+    if storage_path:
+        supabase.storage.from_(MUSIC_BUCKET).remove([storage_path])
+    supabase.table("music_tracks").delete().eq(
+        "id", str(track.get("id", ""))
+    ).eq("user_id", _cloud_user_id()).execute()
+
+
+def load_nutrition_logs():
+    """Load the signed-in golfer's optional private Fuel log."""
+    if not _cloud_ready():
+        return []
+    try:
+        response = (
+            supabase.table("nutrition_logs")
+            .select("id,logged_at,entry_type,description,water_oz,calories,notes,created_at")
+            .eq("user_id", _cloud_user_id())
+            .order("logged_at", desc=True)
+            .limit(100)
+            .execute()
+        )
+        return response.data or []
+    except Exception:
+        return []
+
+
+def add_nutrition_log(entry_type, description, water_oz=0, calories=None, notes=""):
+    if not _cloud_ready():
+        raise RuntimeError("Sign in before saving to your Fuel Log.")
+    clean_description = str(description or "").strip()
+    if entry_type != "Water" and not clean_description:
+        raise ValueError("Add a short description of what you had.")
+    response = supabase.table("nutrition_logs").insert({
+        "user_id": _cloud_user_id(),
+        "entry_type": str(entry_type or "Meal"),
+        "description": clean_description or "Water",
+        "water_oz": max(0.0, min(float(water_oz or 0), 256.0)),
+        "calories": (
+            max(0, min(int(calories), 10000))
+            if calories not in (None, "", 0)
+            else None
+        ),
+        "notes": str(notes or "").strip(),
+    }).execute()
+    return (response.data or [{}])[0]
+
+
+def delete_nutrition_log(log_id):
+    if not _cloud_ready():
+        return
+    (
+        supabase.table("nutrition_logs")
+        .delete()
+        .eq("id", str(log_id))
+        .eq("user_id", _cloud_user_id())
+        .execute()
+    )
+
+
+def load_performance_checkins(limit=30):
+    """Load voluntary, non-diagnostic readiness check-ins for this golfer."""
+    if not _cloud_ready():
+        return []
+    try:
+        response = (
+            supabase.table("performance_checkins")
+            .select(
+                "id,sleep_hours,sleep_quality,energy,stress,mood,soreness,notes,"
+                "use_for_caddie,created_at"
+            )
+            .eq("user_id", _cloud_user_id())
+            .order("created_at", desc=True)
+            .limit(int(limit))
+            .execute()
+        )
+        return response.data or []
+    except Exception:
+        return []
+
+
+def add_performance_checkin(
+    sleep_hours,
+    sleep_quality,
+    energy,
+    stress,
+    mood,
+    soreness,
+    notes="",
+    use_for_caddie=False,
+):
+    if not _cloud_ready():
+        raise RuntimeError("Sign in before saving a Performance Check-In.")
+    response = supabase.table("performance_checkins").insert({
+        "user_id": _cloud_user_id(),
+        "sleep_hours": float(sleep_hours),
+        "sleep_quality": int(sleep_quality),
+        "energy": int(energy),
+        "stress": int(stress),
+        "mood": int(mood),
+        "soreness": int(soreness),
+        "notes": str(notes or "").strip(),
+        "use_for_caddie": bool(use_for_caddie),
+    }).execute()
+    return (response.data or [{}])[0]
+
+
+def delete_performance_checkin(checkin_id):
+    if not _cloud_ready():
+        return
+    (
+        supabase.table("performance_checkins")
+        .delete()
+        .eq("id", str(checkin_id))
+        .eq("user_id", _cloud_user_id())
+        .execute()
+    )
 
 def upload_swing_video_to_cloud(
     local_path,
@@ -8229,6 +8727,13 @@ with header_right:
                 supabase
             )
             st.rerun()
+
+header_hub = str(st.query_params.get("hub", "home") or "home").lower()
+if header_hub != "home":
+    st.markdown(
+        '<a class="myplay-clubhouse-return" href="?hub=home" target="_self">← Back to Clubhouse</a>',
+        unsafe_allow_html=True,
+    )
 
 
 # ============================================================
@@ -14055,6 +14560,9 @@ def ask_openai_live_caddie(
         "Use ALL available player evidence supplied to you, including learned club carries, misses, "
         "range/simulator evidence already reflected in the player model, on-course evidence, "
         "round context, current shot context, and any attached photo. "
+        "If the player explicitly shared a voluntary performance check-in, use it only to adjust tone, "
+        "warm-up expectations, and conservative golf strategy. Do not diagnose, label mental health, "
+        "prescribe food/supplements, or claim the check-in explains performance. "
         "If a photo is attached, use only visible facts such as lie quality, grass depth, slope/stance, "
         "obstructions, bunker/tree/water visibility, and target window. Never invent exact distance, "
         "wind, elevation, hidden hazards, or pin location from the image. "
@@ -16589,20 +17097,29 @@ if not bag:
     st.stop()
 
 
-requested_hub = str(st.query_params.get("hub", "home") or "home").lower()
+requested_hub = header_hub
 main_tab_for_hub = {
     "home": "Home",
-    "round": "Live Round",
+    "play": "Play",
+    "course": "Play",
+    "range": "Play",
+    "round": "Play",
     "caddie": "Caddie",
     "bag": "My Player",
     "uploads": "My Player",
     "player": "My Player",
+    "preferences": "My Player",
+    "analytics": "My Player",
+    "rounds": "My Player",
+    "swing": "My Player",
+    "music": "My Soundtrack",
+    "fuel": "Fuel",
     "settings": "Settings",
 }
 main_tab_default = main_tab_for_hub.get(requested_hub, "Home")
 
-tab_home, tab_round, tab_voice_command, tab_player, tab_settings = st.tabs(
-    ["Home", "Live Round", "Caddie", "My Player", "Settings"],
+tab_home, tab_play, tab_voice_command, tab_player, tab_music, tab_fuel, tab_settings = st.tabs(
+    ["Home", "Play", "Caddie", "My Player", "My Soundtrack", "Fuel", "Settings"],
     default=main_tab_default,
     key="main_navigation",
 )
@@ -16617,18 +17134,6 @@ with tab_home:
     )
     render_clickable_facility()
 
-    home_rounds = load_round_history()
-    home_evidence_count = (
-        len(all_player_evidence)
-        if isinstance(all_player_evidence, pd.DataFrame)
-        else 0
-    )
-    home_round_count = len(home_rounds) if isinstance(home_rounds, pd.DataFrame) else 0
-    home_knowledge_score = min(
-        100,
-        15 + min(len(bag) * 4, 40) + min(home_evidence_count, 30) + min(home_round_count * 5, 15),
-    )
-
     st.subheader("What your personal caddie does")
     st.write(
         "My Play turns the information you already know—and the shots you record—into "
@@ -16636,26 +17141,12 @@ with tab_home:
         "safe miss, and strategy while continuing to learn your real game."
     )
 
-    home_metric1, home_metric2, home_metric3 = st.columns(3)
-    with home_metric1:
-        st.metric("Clubs mapped", len(bag))
-    with home_metric2:
-        st.metric("Shots learned", home_evidence_count)
-    with home_metric3:
-        st.metric("Rounds remembered", home_round_count)
-
-    st.markdown("#### Caddie knowledge")
-    st.progress(home_knowledge_score)
-    st.caption(
-        f"{home_knowledge_score}% ready · Every club, shot, round, and preference gives your caddie better context."
-    )
-
     path_col1, path_col2, path_col3 = st.columns(3)
     with path_col1:
         with st.container(border=True):
             st.markdown("### Play now")
-            st.write("Open **Live Round**, choose a course and tees, then get shot-by-shot help.")
-            st.caption("Fastest path when you are already at the course.")
+            st.write("Open **Play**, then choose a Course round or a Driving Range session.")
+            st.caption("One destination for real rounds and purposeful practice.")
     with path_col2:
         with st.container(border=True):
             st.markdown("### Train my caddie")
@@ -16671,7 +17162,401 @@ with tab_home:
         "Caddie tip: Begin with the clubs and carry distances you trust most. My Play can fill in its understanding as you record real shots."
     )
 
+with tab_music:
+    render_destination_hero(
+        "music",
+        "CLUBHOUSE · LISTENING ROOM",
+        "Set the tone for your round.",
+        "Build private golf playlists from music you own. Tee-Bot can join this room later as the featured house artist.",
+    )
+    st.header("My Soundtrack")
+    st.caption(
+        "Your private golf-music locker. Upload tracks you own, organize them by playlist, and choose the music for your round."
+    )
+
+    music_library, music_upload = st.columns([1.15, 0.85], gap="large")
+
+    with music_upload:
+        with st.container(border=True):
+            st.markdown("### Add a track")
+            uploaded_music = st.file_uploader(
+                "Audio file",
+                type=["mp3", "m4a", "wav"],
+                key="music_file_upload",
+                help="Beta limit: 6 MB per track.",
+            )
+            music_title = st.text_input(
+                "Track title",
+                key="music_track_title",
+                placeholder="Sunday Charge",
+            )
+            music_artist = st.text_input(
+                "Artist",
+                key="music_track_artist",
+                placeholder="Your artist name",
+            )
+            music_playlist = st.text_input(
+                "Playlist",
+                value="My Golf Playlist",
+                key="music_playlist_name",
+            )
+            music_rights = st.checkbox(
+                "I own this recording or have permission to store and play it.",
+                key="music_rights_confirmation",
+            )
+            save_music = st.button(
+                "Add to My Soundtrack",
+                type="primary",
+                use_container_width=True,
+                disabled=uploaded_music is None or not music_rights,
+                key="save_music_track",
+            )
+            if save_music:
+                try:
+                    upload_music_track(
+                        uploaded_music,
+                        music_title,
+                        music_artist,
+                        music_playlist,
+                    )
+                    st.success("Track added to your private soundtrack.")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(
+                        "The music library is not ready yet or the upload failed. "
+                        f"Technical detail: {exc}"
+                    )
+
+    with music_library:
+        tracks = load_music_tracks()
+        if not tracks:
+            with st.container(border=True):
+                st.markdown("### Your music room is ready")
+                st.write(
+                    "Upload your first track to begin. A free Tee-Bot starter station can be added later without changing your personal library."
+                )
+                st.caption(
+                    "Your uploads remain private and are delivered through temporary listening links."
+                )
+        else:
+            playlist_names = sorted({
+                str(track.get("playlist_name", "My Golf Playlist") or "My Golf Playlist")
+                for track in tracks
+            })
+            selected_playlist = st.selectbox(
+                "Playlist",
+                playlist_names,
+                key="selected_music_playlist",
+            )
+            playlist_tracks = [
+                track for track in tracks
+                if str(track.get("playlist_name", "My Golf Playlist") or "My Golf Playlist")
+                == selected_playlist
+            ]
+            selected_track_id = st.selectbox(
+                "Choose a track",
+                [str(track.get("id")) for track in playlist_tracks],
+                format_func=lambda track_id: next(
+                    (
+                        f"{track.get('title', 'Untitled')} — {track.get('artist', 'My Music')}"
+                        for track in playlist_tracks
+                        if str(track.get("id")) == track_id
+                    ),
+                    "Track",
+                ),
+                key="selected_music_track",
+            )
+            selected_track = next(
+                track for track in playlist_tracks
+                if str(track.get("id")) == selected_track_id
+            )
+            with st.container(border=True):
+                st.markdown(f"### {selected_track.get('title', 'Untitled')}")
+                st.caption(
+                    f"{selected_track.get('artist', 'My Music')} · {selected_playlist}"
+                )
+                music_url = signed_music_url(selected_track.get("storage_path"))
+                if music_url:
+                    st.audio(
+                        music_url,
+                        format=selected_track.get("mime_type") or "audio/mpeg",
+                    )
+                else:
+                    st.warning("This track could not be opened. Try refreshing My Soundtrack.")
+
+                delete_music_confirm = st.checkbox(
+                    "Remove this track from my library",
+                    key=f"confirm_delete_music_{selected_track_id}",
+                )
+                if st.button(
+                    "Delete Track",
+                    use_container_width=True,
+                    disabled=not delete_music_confirm,
+                    key=f"delete_music_{selected_track_id}",
+                ):
+                    try:
+                        delete_music_track(selected_track)
+                        st.success("Track deleted.")
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(f"Could not delete the track: {exc}")
+
+        st.info(
+            "For safety on the course, set your music before moving and keep enough volume awareness for golfers, carts, and course staff."
+        )
+
+with tab_fuel:
+    render_destination_hero(
+        "fuel",
+        "CLUBHOUSE · FUEL ROOM",
+        "Fuel the back nine.",
+        "Make a simple game-day plan, then privately remember meals, snacks, and hydration alongside your golf routine.",
+    )
+    st.caption(
+        "General wellness information only—not medical advice. Follow your clinician's guidance for medical conditions, allergies, or individualized nutrition needs."
+    )
+
+    st.markdown("### Build a session plan")
+    fuel_plan_col1, fuel_plan_col2, fuel_plan_col3 = st.columns(3)
+    with fuel_plan_col1:
+        fuel_session = st.selectbox(
+            "Session", ["18 holes", "9 holes", "Driving range"], key="fuel_session_type"
+        )
+    with fuel_plan_col2:
+        fuel_conditions = st.selectbox(
+            "Conditions", ["Mild", "Hot / humid", "Cool"], key="fuel_conditions"
+        )
+    with fuel_plan_col3:
+        fuel_timing = st.selectbox(
+            "Time before play", ["Within 60 minutes", "1–3 hours", "More than 3 hours"], key="fuel_timing"
+        )
+
+    fuel_plan = [
+        "Before: choose familiar food with carbohydrates and some protein; avoid experimenting on game day.",
+        "During: bring water and sip regularly instead of waiting until you feel depleted.",
+    ]
+    if fuel_session == "18 holes":
+        fuel_plan.append("Pack one or two portable snacks so energy is available through the closing holes.")
+    elif fuel_session == "9 holes":
+        fuel_plan.append("A light, familiar snack may be enough if your normal meal timing already supports the round.")
+    else:
+        fuel_plan.append("Match food to the length and intensity of practice; short sessions may only need normal meals and water.")
+    if fuel_conditions == "Hot / humid":
+        fuel_plan.append("Heat increases fluid needs; consider an electrolyte drink if it fits your normal routine and health guidance.")
+    elif fuel_conditions == "Cool":
+        fuel_plan.append("Cool weather can hide thirst, so keep water visible and easy to reach.")
+    if fuel_timing == "Within 60 minutes":
+        fuel_plan.append("Keep the pre-play choice smaller and easy for you to digest.")
+    elif fuel_timing == "1–3 hours":
+        fuel_plan.append("A balanced meal now leaves time to settle before you play.")
+    else:
+        fuel_plan.append("Plan a familiar meal now and pack a small pre-play snack if you expect a long gap.")
+    with st.container(border=True):
+        for fuel_step in fuel_plan:
+            st.write(f"• {fuel_step}")
+        st.caption("After: rehydrate and return to a balanced meal that fits your normal needs.")
+
+    with st.expander("Ask the clubhouse chef: What should I have for dinner?", expanded=False):
+        dinner_col1, dinner_col2 = st.columns(2)
+        with dinner_col1:
+            dinner_style = st.selectbox(
+                "Eating style",
+                ["No preference", "Vegetarian", "Vegan", "Gluten-free"],
+                key="dinner_style",
+            )
+        with dinner_col2:
+            dinner_context = st.selectbox(
+                "Tonight",
+                ["Normal evening", "Recovery after play", "Playing tomorrow morning"],
+                key="dinner_context",
+            )
+        dinner_protein = {
+            "No preference": "chicken, fish, eggs, beans, or tofu",
+            "Vegetarian": "eggs, Greek yogurt, beans, lentils, or tofu",
+            "Vegan": "tofu, tempeh, beans, or lentils",
+            "Gluten-free": "fish, chicken, eggs, beans, or tofu",
+        }[dinner_style]
+        dinner_carb = "rice, potatoes, corn, or certified gluten-free grains" if dinner_style == "Gluten-free" else "rice, potatoes, pasta, or whole grains"
+        if dinner_context == "Recovery after play":
+            dinner_intro = "Build a familiar recovery plate with fluids nearby"
+        elif dinner_context == "Playing tomorrow morning":
+            dinner_intro = "Choose a familiar dinner you digest well and avoid making it unusually heavy"
+        else:
+            dinner_intro = "Keep dinner simple and balanced"
+        st.success(
+            f"{dinner_intro}: choose {dinner_protein}, add {dinner_carb}, include produce you enjoy, and drink to thirst."
+        )
+        st.caption(
+            "This is a flexible meal idea, not a prescribed diet. Adjust for allergies, culture, budget, and professional guidance."
+        )
+
+    st.markdown("### Performance Check-In")
+    st.write(
+        "A voluntary golf-readiness check-in—not a behavioral-health diagnosis. "
+        "You decide whether the caddie may use it for today's tone and course strategy."
+    )
+    latest_checkins = load_performance_checkins(limit=1)
+    if latest_checkins:
+        latest_checkin = latest_checkins[0]
+        readiness_col1, readiness_col2, readiness_col3 = st.columns(3)
+        readiness_col1.metric("Last sleep", f"{float(latest_checkin.get('sleep_hours', 0) or 0):g} hrs")
+        readiness_col2.metric("Energy", f"{int(latest_checkin.get('energy', 0) or 0)}/5")
+        readiness_col3.metric("Stress", f"{int(latest_checkin.get('stress', 0) or 0)}/5")
+        if (
+            float(latest_checkin.get("sleep_hours", 0) or 0) < 6
+            or int(latest_checkin.get("energy", 3) or 3) <= 2
+            or int(latest_checkin.get("stress", 3) or 3) >= 4
+        ):
+            st.warning(
+                "Today's check-in suggests using a patient warm-up and conservative expectations. "
+                "This is a golf-planning prompt, not a health conclusion."
+            )
+        if st.button(
+            "Delete Latest Check-In",
+            key=f"delete_checkin_{latest_checkin.get('id', 'latest')}",
+        ):
+            delete_performance_checkin(latest_checkin.get("id"))
+            st.rerun()
+
+    with st.expander("Complete a private check-in", expanded=not latest_checkins):
+        with st.form("performance_checkin_form", clear_on_submit=True):
+            checkin_col1, checkin_col2 = st.columns(2)
+            with checkin_col1:
+                checkin_sleep_hours = st.number_input(
+                    "Sleep last night (hours)", min_value=0.0, max_value=24.0, value=7.0, step=0.5
+                )
+                checkin_sleep_quality = st.slider("Sleep quality", 1, 5, 3)
+                checkin_energy = st.slider("Energy", 1, 5, 3)
+            with checkin_col2:
+                checkin_stress = st.slider("Stress", 1, 5, 3)
+                checkin_mood = st.slider("Mood", 1, 5, 3)
+                checkin_soreness = st.slider("Soreness", 1, 5, 2)
+            checkin_notes = st.text_input(
+                "Anything your caddie should know? (optional)",
+                placeholder="Long travel day; want a conservative start",
+            )
+            checkin_caddie_consent = st.checkbox(
+                "Let my caddie use this check-in for golf tone and strategy.",
+                help="This permission is stored with this entry. It does not authorize diagnosis, advertising, or sharing.",
+            )
+            save_checkin = st.form_submit_button(
+                "Save Performance Check-In", type="primary", use_container_width=True
+            )
+        if save_checkin:
+            try:
+                add_performance_checkin(
+                    checkin_sleep_hours,
+                    checkin_sleep_quality,
+                    checkin_energy,
+                    checkin_stress,
+                    checkin_mood,
+                    checkin_soreness,
+                    checkin_notes,
+                    checkin_caddie_consent,
+                )
+                st.success(
+                    "Check-in saved privately. "
+                    + ("Your caddie may use it for golf planning." if checkin_caddie_consent else "Your caddie will not use it.")
+                )
+                st.rerun()
+            except Exception as exc:
+                st.error(
+                    "The Performance Check-In is not ready yet or could not be saved. "
+                    f"Technical detail: {exc}"
+                )
+
+    st.markdown("### Private Fuel Log")
+    fuel_log_col, fuel_history_col = st.columns([0.9, 1.1], gap="large")
+    with fuel_log_col:
+        with st.form("fuel_log_form", clear_on_submit=True):
+            fuel_entry_type = st.selectbox(
+                "Entry", ["Meal", "Snack", "Water", "Sports drink"]
+            )
+            fuel_description = st.text_input(
+                "What did you have?",
+                placeholder="Turkey sandwich, banana, water…",
+            )
+            fuel_water_oz = st.number_input(
+                "Fluid ounces (optional)", min_value=0.0, max_value=256.0, value=0.0, step=1.0
+            )
+            fuel_calories = st.number_input(
+                "Calories from a label or your own estimate (optional)",
+                min_value=0,
+                max_value=10000,
+                value=0,
+                step=10,
+                help="My Play does not set calorie targets or treat an estimate as exact.",
+            )
+            fuel_notes = st.text_input(
+                "Note (optional)", placeholder="Before range session"
+            )
+            save_fuel_log = st.form_submit_button(
+                "Save to Fuel Log", type="primary", use_container_width=True
+            )
+        if save_fuel_log:
+            try:
+                add_nutrition_log(
+                    fuel_entry_type,
+                    fuel_description,
+                    fuel_water_oz,
+                    fuel_calories,
+                    fuel_notes,
+                )
+                st.success("Saved privately to your Fuel Log.")
+                st.rerun()
+            except Exception as exc:
+                st.error(
+                    "The Fuel Log is not ready yet or could not be saved. "
+                    f"Technical detail: {exc}"
+                )
+
+    with fuel_history_col:
+        fuel_logs = load_nutrition_logs()
+        if not fuel_logs:
+            with st.container(border=True):
+                st.markdown("#### Your Fuel Log is ready")
+                st.write("Save a meal, snack, or drink when it helps you understand your playing routine.")
+                st.caption("Tracking is optional. My Play keeps each entry connected to your account only.")
+        else:
+            today_utc = datetime.now(timezone.utc).date().isoformat()
+            today_water = sum(
+                float(item.get("water_oz", 0) or 0)
+                for item in fuel_logs
+                if str(item.get("logged_at", "")).startswith(today_utc)
+            )
+            st.metric("Fluids logged today", f"{today_water:g} oz")
+            for fuel_item in fuel_logs[:8]:
+                fuel_id = str(fuel_item.get("id", ""))
+                with st.container(border=True):
+                    item_title = html.escape(str(fuel_item.get("description", "Entry") or "Entry"))
+                    item_type = html.escape(str(fuel_item.get("entry_type", "Entry") or "Entry"))
+                    st.markdown(f"**{item_type} · {item_title}**")
+                    detail_bits = []
+                    if float(fuel_item.get("water_oz", 0) or 0) > 0:
+                        detail_bits.append(f"{float(fuel_item.get('water_oz', 0)):g} oz")
+                    if fuel_item.get("calories") not in (None, ""):
+                        detail_bits.append(f"{int(fuel_item.get('calories')):,} calories (user-entered)")
+                    if fuel_item.get("notes"):
+                        detail_bits.append(str(fuel_item.get("notes")))
+                    if detail_bits:
+                        st.caption(" · ".join(detail_bits))
+                    if st.button(
+                        "Remove", key=f"delete_fuel_{fuel_id}", use_container_width=True
+                    ):
+                        delete_nutrition_log(fuel_id)
+                        st.rerun()
+
+    st.info(
+        "Stop activity and seek appropriate medical help for warning signs such as confusion, fainting, chest pain, or severe illness."
+    )
+
 with tab_settings:
+    render_destination_hero(
+        "settings",
+        "CLUBHOUSE · CONTROL ROOM",
+        "Your account. Your choices.",
+        "Manage the clubhouse atmosphere, password, privacy controls, data export, and account lifecycle in one secure place.",
+    )
     st.header("Settings")
     st.caption(
         f"Signed in as {st.session_state.get('supabase_user_email', 'Golfer')}"
@@ -16709,7 +17594,8 @@ with tab_settings:
     st.subheader("Privacy & your data")
     st.write(
         "Your golf profile is private by default. Optional voice, location, photo, "
-        "scorecard, simulator, and video features are used only when you choose them."
+        "scorecard, simulator, video, soundtrack, and Fuel Log features are used only "
+        "when you choose them."
     )
     with st.expander("Read the Privacy & Data Notice", expanded=False):
         render_beta_data_notice()
@@ -16719,7 +17605,14 @@ with tab_settings:
     settings_rounds = load_round_history()
     try:
         export_bytes = build_player_export(
-            profile, game_profile, bag, all_player_evidence, settings_rounds
+            profile,
+            game_profile,
+            bag,
+            all_player_evidence,
+            settings_rounds,
+            load_music_tracks(),
+            load_nutrition_logs(),
+            load_performance_checkins(),
         )
         st.download_button(
             "Download My Data",
@@ -16728,14 +17621,14 @@ with tab_settings:
             mime="application/zip",
             use_container_width=True,
         )
-        st.caption("Includes core profile, bag, preferences, shots, and round data.")
+        st.caption("Includes core profile, bag, preferences, shots, rounds, music metadata, Fuel Log entries, and Performance Check-Ins.")
     except Exception as exc:
         st.warning(f"The data export could not be prepared: {exc}")
 
     with st.expander("Delete My Account", expanded=False):
         st.warning(
             "This permanently deletes your My Play account, player data, round history, "
-            "and stored swing videos. This cannot be undone."
+            "stored swing videos, music, and Fuel Log entries. This cannot be undone."
         )
         delete_confirmation = st.text_input(
             'Type "DELETE MY ACCOUNT" to confirm',
@@ -16787,12 +17680,27 @@ with tab_player:
             if requested_hub == "bag"
             else "Data Uploads"
             if requested_hub == "uploads"
+            else "Preferences"
+            if requested_hub == "preferences"
+            else "Club Analytics"
+            if requested_hub == "analytics"
+            else "Round Biographies"
+            if requested_hub == "rounds"
+            else "Swing Video"
+            if requested_hub == "swing"
             else "Profile"
         ),
         key="my_player_navigation",
     )
 
 with tab_player_home:
+    render_destination_hero(
+        "player",
+        "MY PLAYER · PROFILE STUDIO",
+        "See the golfer your caddie knows.",
+        "Your profile brings rounds, club evidence, tendencies, and goals together without turning practice into homework.",
+    )
+    render_my_player_room_nav("player")
     player_name = str(profile.get("display_name", "") or "").strip() or "Golfer"
     safe_player_name = html.escape(player_name)
     player_rounds = load_round_history()
@@ -18885,7 +19793,115 @@ def nearest_mapped_bunker_yards(
 # LIVE ROUND
 # ============================================================
 
-with tab_round:
+with tab_play:
+    if requested_hub == "play":
+        render_destination_hero(
+            "course",
+            "PLAY · CHOOSE YOUR SESSION",
+            "Course or range?",
+            "Step outside for a live round, or enter the practice bay to build reliable club data. Your caddie learns from both.",
+        )
+        st.markdown("### Choose where you are playing")
+        play_course_col, play_range_col = st.columns(2, gap="large")
+        with play_course_col:
+            render_route_card(
+                "course",
+                "Course",
+                "Set your course and tees, then get shot-by-shot caddie support.",
+                "?hub=course",
+            )
+        with play_range_col:
+            render_route_card(
+                "range",
+                "Driving Range",
+                "Log practice shots and turn a session into trustworthy club knowledge.",
+                "?hub=range",
+            )
+        st.stop()
+
+    if requested_hub == "range":
+        render_destination_hero(
+            "range",
+            "PLAY · PRACTICE BAY",
+            "Build a better baseline.",
+            "Capture the shots that represent your real game. Range sessions stay separate from on-course rounds, but both improve your caddie.",
+        )
+        st.markdown(
+            '<a class="myplay-room-chip" href="?hub=play" target="_self">← Choose another session</a>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("### Log a range shot")
+        st.caption("Start with solid, normal swings. You can add launch-monitor details later.")
+        range_club_names = [str(item.get("Club", "Club")) for item in bag]
+        with st.form("driving_range_shot_form", clear_on_submit=True):
+            range_col1, range_col2, range_col3 = st.columns(3)
+            with range_col1:
+                range_club = st.selectbox("Club", range_club_names)
+                range_carry = st.number_input(
+                    "Carry (yards)", min_value=1.0, max_value=450.0, value=150.0, step=1.0
+                )
+            with range_col2:
+                range_total = st.number_input(
+                    "Total distance (optional)", min_value=0.0, max_value=500.0, value=0.0, step=1.0
+                )
+                range_offline = st.number_input(
+                    "Offline yards (optional)", min_value=-150.0, max_value=150.0, value=0.0, step=1.0,
+                    help="Use a negative number for left and a positive number for right.",
+                )
+            with range_col3:
+                range_contact = st.selectbox(
+                    "Contact", ["Solid", "Thin", "Heavy", "Toe", "Heel", "Other"]
+                )
+                range_shape = st.selectbox(
+                    "Shot shape", ["Straight", "Fade", "Draw", "Push", "Pull", "Slice", "Hook", "Other"]
+                )
+            range_note = st.text_input(
+                "Session note (optional)", placeholder="Normal tempo, into a light breeze"
+            )
+            save_range_shot = st.form_submit_button(
+                "Save Range Shot", type="primary", use_container_width=True
+            )
+        if save_range_shot:
+            range_ok, range_message = append_club_evidence_record(
+                range_club,
+                range_carry,
+                "Driving Range",
+                total_distance=range_total or None,
+                offline=range_offline if range_offline else None,
+                contact=range_contact,
+                shot_shape=range_shape,
+                note=range_note,
+            )
+            if range_ok:
+                st.success(range_message)
+                st.rerun()
+            else:
+                st.error(range_message)
+
+        range_shots = all_player_evidence.copy() if isinstance(all_player_evidence, pd.DataFrame) else pd.DataFrame()
+        if not range_shots.empty and "Source" in range_shots.columns:
+            range_shots = range_shots[range_shots["Source"].astype(str) == "Driving Range"]
+        with st.expander("Recent range shots", expanded=not range_shots.empty):
+            if range_shots.empty:
+                st.info("Your first saved range shot will appear here.")
+            else:
+                visible_columns = [
+                    column for column in ["Club", "Carry", "Total Distance", "Offline", "Contact", "Shot Shape", "Note"]
+                    if column in range_shots.columns
+                ]
+                st.dataframe(
+                    range_shots[visible_columns].tail(20).iloc[::-1],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+        st.stop()
+
+    render_destination_hero(
+        "course",
+        "PLAY · ON THE COURSE",
+        "Your round. Your decisions. Your caddie.",
+        "Choose a course and tees, then let My Play turn your bag, conditions, and real tendencies into a confident plan.",
+    )
     # Apply voice-selected tee before any Live Round widget with this key exists.
     if "voice_pending_round_start_tee" in st.session_state:
         pending_tee = st.session_state.pop(
@@ -18896,9 +19912,7 @@ with tab_round:
             "round_start_tee"
         ] = pending_tee
 
-    st.header(
-        "⛳ Live Round"
-    )
+    st.header("Live Round")
 
 
     # --------------------------------------------------------
@@ -23080,9 +24094,13 @@ with tab_round:
 
 
 with tab_voice_command:
-    st.header(
-        "🗣️ Caddie"
+    render_destination_hero(
+        "caddie",
+        "CLUBHOUSE · CADDIE ROOM",
+        "Ask, “What’s the play?”",
+        "Talk through a club, target, miss, or strategy. Your caddie combines the situation with the golfer profile it has learned.",
     )
+    st.header("Caddie")
 
     try:
         active_round = load_active_round()
@@ -23499,6 +24517,13 @@ with tab_voice_command:
             st.rerun()
 
 with tab_bag:
+    render_destination_hero(
+        "bag",
+        "MY PLAYER · EQUIPMENT VAULT",
+        "Know every club in the bag.",
+        "Set your stock carries and typical misses. My Play blends those baselines with the shots it learns from you.",
+    )
+    render_my_player_room_nav("bag")
     st.header(
         "My Bag"
     )
@@ -23911,6 +24936,13 @@ if False:  # Retained legacy analytics block; replaced by the clean view below.
     )
 
 with tab_data:
+    render_destination_hero(
+        "uploads",
+        "MY PLAYER · DATA LAB",
+        "Bring your game data inside.",
+        "Import range, simulator, launch-monitor, and previous-round files while preserving the original evidence.",
+    )
+    render_my_player_room_nav("uploads")
     st.header("Data Uploads")
     st.caption(
         "Import simulator, launch-monitor, range, and previous-round data. "
@@ -24554,6 +25586,13 @@ with tab_data:
 
 
 with tab_club_analytics:
+    render_destination_hero(
+        "uploads",
+        "MY PLAYER · ANALYTICS LAB",
+        "Turn shots into decisions.",
+        "See gapping, repeatability, misses, and model confidence—the numbers your caddie uses to choose the play.",
+    )
+    render_my_player_room_nav("analytics")
     st.header("Club Analytics")
     st.caption(
         "A clean view of what My Play has learned. Open only the section you need."
@@ -24945,6 +25984,13 @@ if False:  # Retained legacy analytics block; replaced by the clean view above.
 
 
 with tab_swing_video:
+    render_destination_hero(
+        "swing",
+        "MY PLAYER · SWING STUDIO",
+        "Build your visual baseline.",
+        "Organize swing videos by club and session so future analysis compares you with your own normal pattern.",
+    )
+    render_my_player_room_nav("swing")
     st.header(
         "🎥 Swing Video Beta"
     )
@@ -25619,6 +26665,13 @@ with tab_swing_video:
 
 
 with tab_history:
+    render_destination_hero(
+        "course",
+        "MY PLAYER · ROUND LIBRARY",
+        "Every round becomes a story.",
+        "Review what happened, what My Play learned, and the most useful next step without cluttering your clubhouse home.",
+    )
+    render_my_player_room_nav("rounds")
     st.header("Round Biographies")
     st.caption(
         "Every completed round becomes a permanent story of what happened, what My Play learned, and what to do next."
@@ -25628,7 +26681,7 @@ with tab_history:
     history = load_shots()
 
     if round_history.empty:
-        st.info("Complete a Live Round to create your first Round Biography.")
+        st.info("Complete a Course round to create your first Round Biography.")
     else:
         biography_options = []
         biography_rows = {}
@@ -26146,6 +27199,13 @@ if False:  # Retained legacy history tables; replaced by Round Biographies above
 # ============================================================
 
 with tab_game:
+    render_destination_hero(
+        "settings",
+        "MY PLAYER · FITTING DESK",
+        "Make the caddie sound like yours.",
+        "Set your playing identity, goals, tendencies, reminders, and strategy preferences in one organized room.",
+    )
+    render_my_player_room_nav("preferences")
     st.header("Preferences")
     st.caption(
         "Only open the area you want to change. Your learned performance remains automatic."
