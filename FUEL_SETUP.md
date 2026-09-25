@@ -9,12 +9,12 @@ or replace advice from a qualified health professional.
 
 1. Open the My Play project in Supabase.
 2. Open **SQL Editor** and create a new query.
-3. Paste all of `supabase/nutrition_setup.sql` into the query.
+3. Paste all of `nutrition_setup.sql` into the query.
 4. Select **Run**. This creates the `nutrition_logs` and
    `performance_checkins` tables and per-user Row Level Security rules so
    signed-in golfers can access only their own entries.
 5. Open **Edge Functions**, edit `delete-my-account`, and replace its code with
-   `supabase/functions/delete-my-account/index.ts`.
+   `index.ts`.
 6. Deploy the function again so account deletion also removes Fuel Log entries.
 
 ## Public-beta checklist
