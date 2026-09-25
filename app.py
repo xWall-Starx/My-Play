@@ -405,6 +405,25 @@ st.markdown(
     }
     .myplay-brandcopy h1 { margin: 0; }
     .myplay-brandcopy p { margin: 0; color: var(--myplay-muted); font-size: 0.88rem; }
+    .myplay-home-intro {
+        position: relative;
+        overflow: hidden;
+        padding: clamp(1.5rem, 4vw, 3rem);
+        margin: 1rem 0 1.2rem;
+        border: 1px solid rgba(125, 228, 186, 0.25);
+        border-radius: 1.35rem;
+        background: radial-gradient(circle at 85% 10%, rgba(41, 191, 142, 0.28), transparent 42%),
+                    linear-gradient(135deg, #09251e 0%, #0a1719 64%, #101d29 100%);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+    }
+    .myplay-home-intro__eyebrow { color: #8ff2c5; font-size: 0.76rem; font-weight: 800; letter-spacing: 0.16em; }
+    .myplay-home-intro h2 { color: white; font-size: clamp(2.2rem, 5vw, 4rem); line-height: 1.05; margin: 0.6rem 0; }
+    .myplay-home-intro p { color: #d1e1dd; font-size: 1.06rem; max-width: 44rem; margin: 0; }
+    .myplay-home-section { margin: 1.5rem 0 0.6rem; }
+    .myplay-home-section h3 { margin: 0; font-size: 1.5rem; }
+    .myplay-home-section p { color: var(--myplay-muted); margin: 0.2rem 0 0; }
+    [class*="st-key-home_action_"] button { min-height: 5.4rem; width: 100%; font-size: 1.08rem; text-align: left; padding: 1rem 1.2rem; }
+    [class*="st-key-home_room_"] button { min-height: 3.6rem; width: 100%; }
     [class*="st-key-club_card_"] button {
         min-height: 8.5rem;
         width: 100%;
@@ -17327,40 +17346,37 @@ tab_home, tab_play, tab_voice_command, tab_player, tab_music, tab_fuel, tab_sett
 with tab_home:
     home_player_name = str(profile.get("display_name", "") or "").strip() or "Golfer"
     st.markdown(
-        f"### Welcome to your clubhouse, {html.escape(home_player_name)}"
+        f'<section class="myplay-home-intro"><span class="myplay-home-intro__eyebrow">MY PLAY / YOUR CLUBHOUSE</span>'
+        f'<h2>Ready to play, {html.escape(home_player_name)}?</h2>'
+        '<p>Your game, your decisions, your caddie. Pick up where you want to start.</p></section>',
+        unsafe_allow_html=True,
     )
-    st.caption(
-        "Choose a destination in the room. Your facility grows more useful as your caddie learns your game."
-    )
-    render_clickable_facility()
+    st.markdown('<div class="myplay-home-section"><h3>Where to?</h3><p>Choose one thing to do today.</p></div>', unsafe_allow_html=True)
+    action_columns = st.columns(3, gap="medium")
+    for column, label, description, route in zip(
+        action_columns,
+        ("🏌️  Play a round", "✦  Ask my caddie", "⛳  Build my player"),
+        ("Course or driving range", "Get help with your next shot", "Add clubs and distances"),
+        ("play", "caddie", "player"),
+    ):
+        with column:
+            st.button(label, key=f"home_action_{route}", type="primary" if route == "play" else "secondary",
+                      use_container_width=True, on_click=set_active_hub, args=(route,))
+            st.caption(description)
 
-    st.subheader("What your personal caddie does")
-    st.write(
-        "My Play turns the information you already know—and the shots you record—into "
-        "clear, course-ready decisions. It recommends a club, target, playing distance, "
-        "safe miss, and strategy while continuing to learn your real game."
-    )
+    st.markdown('<div class="myplay-home-section"><h3>More in your clubhouse</h3><p>Everything else is one tap away.</p></div>', unsafe_allow_html=True)
+    room_columns = st.columns(4, gap="small")
+    for column, label, route in zip(
+        room_columns,
+        ("🎒 My Bag", "📈 My Game", "♫ Soundtrack", "⚙ Settings"),
+        ("bag", "analytics", "music", "settings"),
+    ):
+        with column:
+            st.button(label, key=f"home_room_{route}", use_container_width=True,
+                      on_click=set_active_hub, args=(route,))
 
-    path_col1, path_col2, path_col3 = st.columns(3)
-    with path_col1:
-        with st.container(border=True):
-            st.markdown("### Play now")
-            st.write("Open **Play**, then choose a Course round or a Driving Range session.")
-            st.caption("One destination for real rounds and purposeful practice.")
-    with path_col2:
-        with st.container(border=True):
-            st.markdown("### Train my caddie")
-            st.write("Open **My Player** to add clubs, distances, misses, preferences, or simulator data.")
-            st.caption("You can start small—perfect data is not required.")
-    with path_col3:
-        with st.container(border=True):
-            st.markdown("### Ask the caddie")
-            st.write("Open **Caddie** to speak naturally about a shot, target, club, or result.")
-            st.caption("Manual controls remain available if you skip voice or location.")
-
-    st.info(
-        "Caddie tip: Begin with the clubs and carry distances you trust most. My Play can fill in its understanding as you record real shots."
-    )
+    with st.expander("Explore the clubhouse", expanded=False):
+        render_clickable_facility()
 
 with tab_music:
     render_destination_hero(
