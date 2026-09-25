@@ -38,17 +38,17 @@ Deploy `app.py` from this repository to Streamlit Community Cloud. Keep API keys
 in Streamlit Secrets—never commit `.streamlit/secrets.toml`.
 
 The self-service deletion button calls the protected Supabase Edge Function at
-`supabase/functions/delete-my-account/index.ts`. Deploy that function in the
+`index.ts`. Deploy that function in the
 same Supabase project before enabling public accounts. Test the full flow with a
 disposable account first.
 
 The private music room requires a one-time database and Storage setup. Run
-`supabase/music_setup.sql` in the Supabase SQL Editor, then redeploy the account
+`music_setup.sql` in the Supabase SQL Editor, then redeploy the account
 deletion function so deleting an account also removes its private music files.
 The Tee-Bot starter station is intentionally reserved for a later release.
 
 The optional Fuel Log also requires a one-time setup. Run
-`supabase/nutrition_setup.sql` in the Supabase SQL Editor, then use the latest
+`nutrition_setup.sql` in the Supabase SQL Editor, then use the latest
 account-deletion function. See `FUEL_SETUP.md` for the public-beta checklist.
 
 ## Privacy and beta terms
