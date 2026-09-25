@@ -1404,21 +1404,20 @@ def get_supabase_client():
 
     if access_token and refresh_token:
         try:
-            client.auth.set_session(
+            response = client.auth.set_session(
                 access_token,
                 refresh_token
             )
+            if response.session is None or response.user is None:
+                raise ValueError("No active Supabase session")
+            # set_session may refresh and rotate tokens. Persist the new pair
+            # before the next Streamlit rerun.
+            store_auth_session(response)
         except Exception:
-            for session_key in [
-                "supabase_access_token",
-                "supabase_refresh_token",
-                "supabase_user_id",
-                "supabase_user_email"
-            ]:
-                st.session_state.pop(
-                    session_key,
-                    None
-                )
+            clear_auth_session()
+    else:
+        # An ID alone does not prove the visitor is authenticated.
+        clear_auth_session()
 
     return client
 
@@ -1436,13 +1435,15 @@ def store_auth_session(
         None
     )
 
-    if session is not None:
-        st.session_state[
-            "supabase_access_token"
-        ] = session.access_token
-        st.session_state[
-            "supabase_refresh_token"
-        ] = session.refresh_token
+    if session is None or user is None:
+        return
+
+    st.session_state[
+        "supabase_access_token"
+    ] = session.access_token
+    st.session_state[
+        "supabase_refresh_token"
+    ] = session.refresh_token
 
     if user is not None:
         st.session_state[
@@ -1505,24 +1506,22 @@ def ensure_cloud_profile(
             .execute()
         )
 
-def sign_out_cloud(
-    client
-):
-    try:
-        client.auth.sign_out()
-    except Exception:
-        pass
-
+def clear_auth_session():
     for session_key in [
         "supabase_access_token",
         "supabase_refresh_token",
         "supabase_user_id",
         "supabase_user_email"
     ]:
-        st.session_state.pop(
-            session_key,
-            None
-        )
+        st.session_state.pop(session_key, None)
+
+
+def sign_out_cloud(client):
+    try:
+        client.auth.sign_out()
+    except Exception:
+        pass
+    clear_auth_session()
 
 def auth_confirmation_redirect_url():
     """
