@@ -8946,9 +8946,23 @@ if "active_hub" not in st.session_state:
         st.query_params.get("hub", "home") or "home"
     ).lower()
 header_hub = str(st.session_state.get("active_hub", "home") or "home").lower()
+core_navigation = st.columns(4, gap="small")
+for navigation_column, navigation_label, navigation_route in zip(
+    core_navigation,
+    ("Home", "Play", "My Player", "Settings"),
+    ("home", "play", "player", "settings"),
+):
+    with navigation_column:
+        st.button(
+            navigation_label,
+            key=f"core_nav_{navigation_route}",
+            use_container_width=True,
+            on_click=set_active_hub,
+            args=(navigation_route,),
+        )
 if header_hub != "home":
     st.button(
-        "← Back to Clubhouse",
+        "← Home",
         key="back_to_clubhouse",
         on_click=set_active_hub,
         args=("home",),
@@ -17346,34 +17360,34 @@ tab_home, tab_play, tab_voice_command, tab_player, tab_music, tab_fuel, tab_sett
 with tab_home:
     home_player_name = str(profile.get("display_name", "") or "").strip() or "Golfer"
     st.markdown(
-        f'<section class="myplay-home-intro"><span class="myplay-home-intro__eyebrow">MY PLAY / YOUR CLUBHOUSE</span>'
+        f'<section class="myplay-home-intro"><span class="myplay-home-intro__eyebrow">MY PLAY / YOUR PERSONAL CADDIE</span>'
         f'<h2>Ready to play, {html.escape(home_player_name)}?</h2>'
-        '<p>Your game, your decisions, your caddie. Pick up where you want to start.</p></section>',
+        '<p>Start a round, get a shot recommendation, or update your bag.</p></section>',
         unsafe_allow_html=True,
     )
     st.markdown('<div class="myplay-home-section"><h3>Where to?</h3><p>Choose one thing to do today.</p></div>', unsafe_allow_html=True)
     action_columns = st.columns(3, gap="medium")
     for column, label, description, route in zip(
         action_columns,
-        ("🏌️  Play a round", "✦  Ask my caddie", "⛳  Build my player"),
+        ("🏌️  Play a round", "✦  Ask my caddie", "🎒  My bag"),
         ("Course or driving range", "Get help with your next shot", "Add clubs and distances"),
-        ("play", "caddie", "player"),
+        ("play", "caddie", "bag"),
     ):
         with column:
             st.button(label, key=f"home_action_{route}", type="primary" if route == "play" else "secondary",
                       use_container_width=True, on_click=set_active_hub, args=(route,))
             st.caption(description)
 
-    st.markdown('<div class="myplay-home-section"><h3>More in your clubhouse</h3><p>Everything else is one tap away.</p></div>', unsafe_allow_html=True)
-    room_columns = st.columns(4, gap="small")
-    for column, label, route in zip(
-        room_columns,
-        ("🎒 My Bag", "📈 My Game", "♫ Soundtrack", "⚙ Settings"),
-        ("bag", "analytics", "music", "settings"),
-    ):
-        with column:
-            st.button(label, key=f"home_room_{route}", use_container_width=True,
-                      on_click=set_active_hub, args=(route,))
+    with st.expander("More tools", expanded=False):
+        room_columns = st.columns(3, gap="small")
+        for column, label, route in zip(
+            room_columns,
+            ("📈 My Game", "♫ Soundtrack", "Fuel"),
+            ("analytics", "music", "fuel"),
+        ):
+            with column:
+                st.button(label, key=f"home_room_{route}", use_container_width=True,
+                          on_click=set_active_hub, args=(route,))
 
     with st.expander("Explore the clubhouse", expanded=False):
         render_clickable_facility()
