@@ -281,6 +281,26 @@ st.markdown(
         font-size: 0.88rem;
         margin-bottom: 1rem;
     }
+    [class*="st-key-core_navigation_"] button {
+        min-height: 3.3rem;
+        border: 2px solid var(--myplay-green);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        transition: transform 140ms ease, box-shadow 140ms ease;
+    }
+    [class*="st-key-core_navigation_"] button p { font-size: 1.05rem; font-weight: 750; }
+    [class*="st-key-core_navigation_"] button[kind="primary"] { color: #fff; }
+    [class*="st-key-core_navigation_"] button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 18px rgba(57, 119, 93, 0.25);
+    }
+    [class*="st-key-core_navigation_"] button:focus-visible {
+        outline: 3px solid var(--text-color);
+        outline-offset: 3px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        [class*="st-key-core_navigation_"] button { transition: none; }
+        [class*="st-key-core_navigation_"] button:hover { transform: none; }
+    }
     /* The clubhouse and room controls are the navigation. Streamlit tabs are
        retained only as an internal content switch and must never appear. */
     div[data-testid="stTabs"] > div[data-baseweb="tab-list"],
@@ -8947,15 +8967,21 @@ if "active_hub" not in st.session_state:
     ).lower()
 header_hub = str(st.session_state.get("active_hub", "home") or "home").lower()
 core_navigation = st.columns(4, gap="small")
+core_active_route = (
+    "play" if header_hub in {"play", "course", "range", "round", "caddie"}
+    else "player" if header_hub in {"player", "bag", "preferences", "analytics", "rounds", "swing", "uploads"}
+    else header_hub
+)
 for navigation_column, navigation_label, navigation_route in zip(
     core_navigation,
     ("Home", "Play", "My Player", "Settings"),
     ("home", "play", "player", "settings"),
 ):
-    with navigation_column:
+    with navigation_column, st.container(key=f"core_navigation_{navigation_route}"):
         st.button(
             navigation_label,
             key=f"core_nav_{navigation_route}",
+            type="primary" if core_active_route == navigation_route else "secondary",
             use_container_width=True,
             on_click=set_active_hub,
             args=(navigation_route,),
